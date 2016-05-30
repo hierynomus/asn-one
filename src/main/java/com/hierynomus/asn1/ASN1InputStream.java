@@ -53,6 +53,8 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
 
             //noinspection unchecked
             return (T) tag.newParser().parse(value);
+        } catch (ASN1ParseException pe) {
+            throw pe;
         } catch (Exception e) {
             throw new ASN1ParseException(e, "Cannot parse ASN.1 object from stream");
         }
@@ -107,11 +109,16 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
             return firstByte;
         }
         int nrBytes = firstByte & 0x7f;
-        int length = 0;
+        int longLength = 0;
         for (int i = 0; i < nrBytes; i++) {
-            length = length << 8;
-            length += read();
+            longLength = longLength << 8;
+            longLength += read();
         }
-        return length;
+
+        if (longLength == 0) {
+            throw new ASN1ParseException("The indefinite length form is not (yet) supported!");
+        }
+
+        return longLength;
     }
 }
