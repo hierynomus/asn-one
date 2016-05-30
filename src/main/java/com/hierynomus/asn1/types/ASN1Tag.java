@@ -20,10 +20,7 @@ import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.types.constructed.ASN1Sequence;
 import com.hierynomus.asn1.types.constructed.ASN1Set;
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObject;
-import com.hierynomus.asn1.types.primitive.ASN1Boolean;
-import com.hierynomus.asn1.types.primitive.ASN1Integer;
-import com.hierynomus.asn1.types.primitive.ASN1Null;
-import com.hierynomus.asn1.types.primitive.ASN1ObjectIdentifier;
+import com.hierynomus.asn1.types.primitive.*;
 import com.hierynomus.asn1.types.string.ASN1BitString;
 
 import java.util.EnumSet;
@@ -118,6 +115,12 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         @Override
         public ASN1Parser<ASN1ObjectIdentifier> newParser() {
             return new ASN1ObjectIdentifier.Parser();
+        }
+    };
+    public static final ASN1Tag<ASN1Enumerated> ENUMERATED = new ASN1Tag<ASN1Enumerated>(Universal, 0x0A, ASN1Encoding.Primitive) {
+        @Override
+        public ASN1Parser<ASN1Enumerated> newParser() {
+            return new ASN1Enumerated.Parser();
         }
     };
     public static final ASN1Tag<ASN1Set> SET = new ASN1Tag<ASN1Set>(Universal, 0x11, ASN1Encoding.Constructed) {
