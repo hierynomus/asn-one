@@ -36,8 +36,11 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
 
     @Override
     public Iterator<ASN1Object> iterator() {
-        // TODO Check Constructed
-        return ASN1Tag.SEQUENCE.newParser().parse(valueBytes).iterator();
+        if (tag.getAsn1Encoding() == ASN1Tag.ASN1Encoding.Constructed) {
+            return ASN1Tag.SEQUENCE.newParser(ASN1Tag.ASN1Encoding.Constructed).parse(valueBytes).iterator();
+        } else {
+            return Collections.<ASN1Object>singletonList(this).iterator();
+        }
     }
 
     public abstract int length();
