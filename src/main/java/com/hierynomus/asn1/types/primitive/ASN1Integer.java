@@ -20,7 +20,7 @@ import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.math.BigInteger;
 
-public class ASN1Integer extends ASN1PrimitiveValue {
+public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
     private BigInteger value;
 
     public ASN1Integer(long value) {
@@ -38,7 +38,7 @@ public class ASN1Integer extends ASN1PrimitiveValue {
     }
 
     @Override
-    public Object getValue() {
+    public BigInteger getValue() {
         return value;
     }
 

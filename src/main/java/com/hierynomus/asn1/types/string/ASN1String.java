@@ -20,12 +20,13 @@ import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Primitive;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 /**
  * An ASN.1 STRING type can either be expressed as a Primitive encoded or Constructed encoded sequence.
  */
-public abstract class ASN1String extends ASN1Object implements ASN1Primitive, ASN1Constructed {
+public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primitive, ASN1Constructed {
     protected byte[] valueBytes;
 
     public ASN1String(ASN1Tag<?> tag, byte[] bytes) {

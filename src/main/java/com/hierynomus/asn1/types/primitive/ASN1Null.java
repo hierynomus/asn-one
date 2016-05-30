@@ -19,7 +19,7 @@ import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.util.Checks;
 
-public class ASN1Null extends ASN1PrimitiveValue {
+public class ASN1Null extends ASN1PrimitiveValue<Void> {
 
     private static final byte[] NULL_BYTES = new byte[0];
 
@@ -28,7 +28,7 @@ public class ASN1Null extends ASN1PrimitiveValue {
     }
 
     @Override
-    public Object getValue() {
+    public Void getValue() {
         return null;
     }
 

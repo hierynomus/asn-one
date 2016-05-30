@@ -25,7 +25,7 @@ import com.hierynomus.asn1.types.ASN1Tag;
 import java.io.ByteArrayInputStream;
 import java.util.Iterator;
 
-public class ASN1TaggedObject extends ASN1Object implements ASN1Constructed {
+public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Constructed {
     private byte[] bytes;
 
     protected ASN1TaggedObject(ASN1Tag tag, byte[] bytes) {
@@ -34,7 +34,7 @@ public class ASN1TaggedObject extends ASN1Object implements ASN1Constructed {
     }
 
     @Override
-    public Object getValue() {
+    public ASN1Object getValue() {
         return getObject();
     }
 

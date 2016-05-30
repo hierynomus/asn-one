@@ -23,7 +23,7 @@ import java.math.BigInteger;
 
 import static com.hierynomus.asn1.util.Checks.checkArgument;
 
-public class ASN1ObjectIdentifier extends ASN1PrimitiveValue {
+public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
 
     private String oid;
 
@@ -38,7 +38,7 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue {
     }
 
     @Override
-    public Object getValue() {
+    public String getValue() {
         return oid;
     }
 

@@ -21,7 +21,7 @@ import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.util.Arrays;
 
-public abstract class ASN1PrimitiveValue extends ASN1Object implements ASN1Primitive {
+public abstract class ASN1PrimitiveValue<T> extends ASN1Object<T> implements ASN1Primitive {
 
     protected byte[] valueBytes;
 

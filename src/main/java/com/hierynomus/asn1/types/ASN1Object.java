@@ -15,7 +15,7 @@
  */
 package com.hierynomus.asn1.types;
 
-public abstract class ASN1Object {
+public abstract class ASN1Object<T> {
 
     protected ASN1Tag tag;
 
@@ -23,7 +23,7 @@ public abstract class ASN1Object {
         this.tag = tag;
     }
 
-    public abstract Object getValue();
+    public abstract T getValue();
 
     @Override
     public boolean equals(Object o) {

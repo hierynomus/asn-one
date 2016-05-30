@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ASN1Sequence extends ASN1Object implements ASN1Constructed {
+public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Constructed {
     private final List<ASN1Object> objects;
     private byte[] bytes;
 
@@ -43,7 +43,7 @@ public class ASN1Sequence extends ASN1Object implements ASN1Constructed {
     }
 
     @Override
-    public Object getValue() {
+    public List<ASN1Object> getValue() {
         return new ArrayList<>(objects);
     }
 

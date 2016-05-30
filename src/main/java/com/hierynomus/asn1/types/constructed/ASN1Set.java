@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-public class ASN1Set extends ASN1Object implements ASN1Constructed {
+public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Constructed {
     private final Set<ASN1Object> objects;
     private byte[] bytes;
 
@@ -43,7 +43,7 @@ public class ASN1Set extends ASN1Object implements ASN1Constructed {
     }
 
     @Override
-    public Object getValue() {
+    public Set<ASN1Object> getValue() {
         return new HashSet<>(objects);
     }
 

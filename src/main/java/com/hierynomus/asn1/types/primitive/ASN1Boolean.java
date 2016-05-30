@@ -19,7 +19,7 @@ import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.util.Checks;
 
-public class ASN1Boolean extends ASN1PrimitiveValue {
+public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
 
     private boolean value;
 
@@ -34,7 +34,7 @@ public class ASN1Boolean extends ASN1PrimitiveValue {
     }
 
     @Override
-    public Object getValue() {
+    public Boolean getValue() {
         return value;
     }
 

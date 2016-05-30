@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
-public class ASN1BitString extends ASN1String {
+public class ASN1BitString extends ASN1String<BitSet> {
 
     private int unusedBits;
 
@@ -39,7 +39,7 @@ public class ASN1BitString extends ASN1String {
     }
 
     @Override
-    public Object getValue() {
+    public BitSet getValue() {
         return BitSet.valueOf(valueBytes);
     }
 
