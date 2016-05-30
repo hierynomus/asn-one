@@ -88,7 +88,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         ASN1Tag.ASN1Encoding asn1Encoding = ASN1Tag.ASN1Encoding.parseEncoding((byte) tagByte);
         int tag = tagByte & 0x1f;
         if (tag <= 0x1e) {
-            return ASN1Tag.forTag(asn1TagClass, tag);
+            return ASN1Tag.forTag(asn1TagClass, tag).asEncoded(asn1Encoding);
         } else {
             int iTag = 0;
             int read = read();
@@ -97,7 +97,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
                 iTag |= (read & 0x7f);
                 read = read();
             } while ((read & 0x80) > 0);
-            return ASN1Tag.forTag(asn1TagClass, iTag);
+            return ASN1Tag.forTag(asn1TagClass, iTag).asEncoded(asn1Encoding);
         }
     }
 

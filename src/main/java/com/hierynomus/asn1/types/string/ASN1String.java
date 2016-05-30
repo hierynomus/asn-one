@@ -20,7 +20,6 @@ import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Primitive;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
 /**

@@ -38,8 +38,8 @@ class ASN1TaggedObjectSpec extends Specification {
     (taggedObject as ASN1TaggedObject).getObject() == object
 
     where:
-    bytes                                                        | tag                              | object
-    [0x60, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0) | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
+    bytes                                                        | tag                                   | object
+    [0x60, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0)      | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
     [0x81, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(ContextSpecific, 0x01) | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
   }
 
@@ -53,8 +53,8 @@ class ASN1TaggedObjectSpec extends Specification {
     (taggedObject as ASN1TaggedObject).getObject(ASN1Tag.OBJECT_IDENTIFIER) == object
 
     where:
-    bytes                                                        | tag                              | object
-    [0x60, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0) | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
+    bytes                                            | tag                                   | object
+    [0x60, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0)      | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
     [0x81, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(ContextSpecific, 0x01) | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
   }
 
