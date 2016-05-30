@@ -156,7 +156,7 @@ public abstract class ASN1Tag<T extends ASN1Object> {
 
     public ASN1Tag asEncoded(ASN1Encoding asn1Encoding) {
         if (!supportedEncodings.contains(asn1Encoding)) {
-            throw new IllegalArgumentException(format("The tag %s does not support encoding as %s", this, asn1Encoding));
+            throw new IllegalArgumentException(format("The ASN.1 tag %s does not support encoding as %s", this, asn1Encoding));
         }
         return new ASN1Tag(this.asn1TagClass, this.tag, asn1Encoding, this.supportedEncodings) {
             @Override

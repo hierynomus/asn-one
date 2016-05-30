@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.ASN1ParseException
 import com.hierynomus.asn1.types.primitive.ASN1Integer
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -44,5 +45,18 @@ class ASN1IntegerSpec extends Specification {
     [0x02, 0x02, 0x00, 0x80] | new ASN1Integer(new BigInteger(128))
     [0x02, 0x01, 0x83]       | new ASN1Integer(new BigInteger(-125))
     LARGE_INT                | new ASN1Integer(new BigInteger("101038645214968213029489864879507742420925199145132483818978980455132582258676381289000109319204510275496178360219909358646064503513889573494768497419381751359787623037449375660247011308028102339473875820259375735204357343091558075960601364303443174344509161224592926325506446708043127306053676664799729848421"))
+  }
+
+  def "should fail when trying to read an ASN.1 Integer with the 'constructed' bit set"() {
+    given:
+    def is = new ASN1InputStream([0x22, 0x01, 0x03] as byte[])
+
+    when:
+    is.readObject()
+
+    then:
+    def ex = thrown(ASN1ParseException.class)
+    def wrapped = ex.getCause()
+    wrapped.message ==~ "The ASN.1 tag .* does not support encoding as Constructed"
   }
 }

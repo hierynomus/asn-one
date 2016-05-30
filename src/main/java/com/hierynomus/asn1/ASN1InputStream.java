@@ -53,7 +53,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
 
             //noinspection unchecked
             return (T) tag.newParser().parse(value);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new ASN1ParseException(e, "Cannot parse ASN.1 object from stream");
         }
     }
