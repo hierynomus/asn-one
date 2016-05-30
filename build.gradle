@@ -11,6 +11,8 @@ repositories {
   mavenCentral()
 }
 
+group = "com.hierynomus.asn-one"
+
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
@@ -22,8 +24,6 @@ idea {
 }
 
 configurations.compile.transitive = false
-
-def bouncycastleVersion = "1.54"
 
 dependencies {
   compile "org.slf4j:slf4j-api:1.7.13"
