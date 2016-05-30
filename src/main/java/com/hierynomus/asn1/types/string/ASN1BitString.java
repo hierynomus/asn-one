@@ -49,9 +49,18 @@ public class ASN1BitString extends ASN1String {
      * @return <code>true</code> if bit 'x' is set, <code>false</code> otherwise.
      */
     public boolean isSet(int x) {
-        return (valueBytes[x / 8] & (1 << (x % 8))) != 0;
+        int toCheck = x / 8;
+        byte theByte = valueBytes[toCheck];
+        int index = x % 8;
+        int mask = 1 << (7 - index);
+        int masked = theByte & mask;
+        return masked != 0;
     }
 
+    @Override
+    public int length() {
+        return (valueBytes.length * 8) - unusedBits;
+    }
 
     public static class Parser implements ASN1Parser<ASN1BitString> {
         @Override

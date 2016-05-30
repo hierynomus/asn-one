@@ -39,4 +39,6 @@ public abstract class ASN1String extends ASN1Object implements ASN1Primitive, AS
         // TODO Check Constructed
         return ASN1Tag.SEQUENCE.newParser().parse(valueBytes).iterator();
     }
+
+    public abstract int length();
 }
