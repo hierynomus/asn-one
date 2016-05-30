@@ -38,6 +38,14 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         return getObject();
     }
 
+    /**
+     * Returns the identifying tag number of this ASN.1 Tagged Object.
+     * @return the tag number.
+     */
+    public int getTagNo() {
+        return tag.getTag();
+    }
+
     @Override
     public Iterator<ASN1Object> iterator() {
         return getObject(ASN1Tag.SEQUENCE).iterator();
