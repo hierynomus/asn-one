@@ -15,9 +15,9 @@
  */
 package com.hierynomus.asn1;
 
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
-import com.hierynomus.asn1.types.ASN1Tag.ASN1TagClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,35 +29,37 @@ import java.util.Iterator;
 
 public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1Object> {
     private static final Logger logger = LoggerFactory.getLogger(ASN1InputStream.class);
+    private final ASN1Decoder decoder;
 
-    public ASN1InputStream(InputStream wrapped) {
+    public ASN1InputStream(ASN1Decoder decoder, InputStream wrapped) {
         super(wrapped);
+        this.decoder = decoder;
     }
 
-    public ASN1InputStream(byte[] value) {
+    public ASN1InputStream(ASN1Decoder decoder, byte[] value) {
         super(new ByteArrayInputStream(value));
+        this.decoder = decoder;
     }
 
     public <T extends ASN1Object> T readObject() throws ASN1ParseException {
         try {
-            ASN1Tag tag = readTag();
+            ASN1Tag tag = decoder.readTag(this);
             logger.trace("Read ASN.1 tag {}", tag);
-            int length = readLength();
+            int length = decoder.readLength(this);
             logger.trace("Read ASN.1 object length: {}", length);
-            byte[] value = new byte[length];
-            int count = 0;
-            int read = 0;
-            while (count < length && ((read = read(value, count, length - count)) != -1)) {
-                count += read;
-            }
+            byte[] value = decoder.readValue(length, this);
 
             //noinspection unchecked
-            return (T) tag.newParser().parse(value);
+            return (T) tag.newParser(decoder).parse(tag, value);
         } catch (ASN1ParseException pe) {
             throw pe;
         } catch (Exception e) {
             throw new ASN1ParseException(e, "Cannot parse ASN.1 object from stream");
         }
+    }
+
+    public byte[] readValue(int length) throws IOException {
+        return decoder.readValue(length, this);
     }
 
     public Iterator<ASN1Object> iterator() {
@@ -84,41 +86,11 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         };
     }
 
-    private ASN1Tag readTag() throws IOException {
-        int tagByte = read();
-        ASN1TagClass asn1TagClass = ASN1TagClass.parseClass((byte) tagByte);
-        ASN1Tag.ASN1Encoding asn1Encoding = ASN1Tag.ASN1Encoding.parseEncoding((byte) tagByte);
-        int tag = tagByte & 0x1f;
-        if (tag <= 0x1e) {
-            return ASN1Tag.forTag(asn1TagClass, tag).asEncoded(asn1Encoding);
-        } else {
-            int iTag = 0;
-            int read = read();
-            do {
-                iTag <<= 7;
-                iTag |= (read & 0x7f);
-                read = read();
-            } while ((read & 0x80) > 0);
-            return ASN1Tag.forTag(asn1TagClass, iTag).asEncoded(asn1Encoding);
-        }
+    public ASN1Tag readTag() throws IOException {
+        return decoder.readTag(this);
     }
 
-    private int readLength() throws IOException {
-        int firstByte = read();
-        if (firstByte < 0x7f) {
-            return firstByte;
-        }
-        int nrBytes = firstByte & 0x7f;
-        int longLength = 0;
-        for (int i = 0; i < nrBytes; i++) {
-            longLength = longLength << 8;
-            longLength += read();
-        }
-
-        if (longLength == 0) {
-            throw new ASN1ParseException("The indefinite length form is not (yet) supported!");
-        }
-
-        return longLength;
+    public int readLength() throws IOException {
+        return decoder.readLength(this);
     }
 }

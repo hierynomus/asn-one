@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types.primitive;
 
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.io.ByteArrayInputStream;
@@ -47,9 +48,13 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
         return oid.hashCode();
     }
 
-    public static class Parser implements ASN1Parser<ASN1ObjectIdentifier> {
+    public static class Parser extends ASN1Parser<ASN1ObjectIdentifier> {
+        public Parser(ASN1Decoder decoder) {
+            super(decoder);
+        }
+
         @Override
-        public ASN1ObjectIdentifier parse(byte[] value) {
+        public ASN1ObjectIdentifier parse(ASN1Tag<ASN1ObjectIdentifier> asn1Tag, byte[] value) {
             checkArgument(value.length > 0, "An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
             ByteArrayInputStream is = new ByteArrayInputStream(value);
             StringBuilder b = new StringBuilder();

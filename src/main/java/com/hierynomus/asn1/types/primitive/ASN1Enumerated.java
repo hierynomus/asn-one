@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types.primitive;
 
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.math.BigInteger;
@@ -34,10 +35,14 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
         return value;
     }
 
-    public static class Parser implements ASN1Parser<ASN1Enumerated> {
+    public static class Parser extends ASN1Parser<ASN1Enumerated> {
+        public Parser(ASN1Decoder decoder) {
+            super(decoder);
+        }
+
         @Override
-        public ASN1Enumerated parse(byte[] value) throws ASN1ParseException {
-            ASN1Integer parse = new ASN1Integer.Parser().parse(value);
+        public ASN1Enumerated parse(ASN1Tag<ASN1Enumerated> asn1Tag, byte[] value) throws ASN1ParseException {
+            ASN1Integer parse = new ASN1Integer.Parser(decoder).parse(ASN1Tag.INTEGER, value);
             BigInteger value1 = (BigInteger) parse.getValue();
             return new ASN1Enumerated(ASN1Tag.ENUMERATED, value1, value);
         }

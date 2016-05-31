@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types
 
 import com.hierynomus.asn1.ASN1InputStream
 import com.hierynomus.asn1.ASN1ParseException
+import com.hierynomus.asn1.encodingrules.ber.BERDecoder
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObject
 import com.hierynomus.asn1.types.primitive.ASN1ObjectIdentifier
 import spock.lang.Specification
@@ -30,7 +31,7 @@ class ASN1TaggedObjectSpec extends Specification {
 
   def "should parse an explicit ASN.1 Tagged Object #tag"() {
     given:
-    def is = new ASN1InputStream(new ByteArrayInputStream(bytes as byte[]))
+    def is = new ASN1InputStream(new BERDecoder(), new ByteArrayInputStream(bytes as byte[]))
     def taggedObject = is.readObject()
 
     expect:
@@ -45,7 +46,7 @@ class ASN1TaggedObjectSpec extends Specification {
 
   def "should parse an implicit ASN.1 Tagged Object #tag"() {
     given:
-    def is = new ASN1InputStream(new ByteArrayInputStream(bytes as byte[]))
+    def is = new ASN1InputStream(new BERDecoder(), new ByteArrayInputStream(bytes as byte[]))
     def taggedObject = is.readObject()
 
     expect:
@@ -60,7 +61,7 @@ class ASN1TaggedObjectSpec extends Specification {
 
   def "should not parse an implicit ASN.1 Tagged Object with as explicit"() {
     given:
-    def is = new ASN1InputStream(new ByteArrayInputStream([0x60, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] as byte[]))
+    def is = new ASN1InputStream(new BERDecoder(), new ByteArrayInputStream([0x60, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] as byte[]))
     def taggedObject = is.readObject()
 
     when:

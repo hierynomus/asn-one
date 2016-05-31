@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.encodingrules.ber.BERDecoder
 import com.hierynomus.asn1.types.primitive.ASN1Boolean
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -25,7 +26,7 @@ class ASN1BooleanSpec extends Specification {
   @Unroll
   def "should parse an ASN.1 BOOLEAN with value #value"() {
     expect:
-    new ASN1InputStream(new ByteArrayInputStream(buffer as byte[])).readObject() == value
+    new ASN1InputStream(new BERDecoder(), new ByteArrayInputStream(buffer as byte[])).readObject() == value
 
     where:
     buffer | value

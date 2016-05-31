@@ -13,40 +13,39 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types.primitive;
+package com.hierynomus.asn1.types.string;
 
+import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Tag;
-import com.hierynomus.asn1.util.Checks;
 
-public class ASN1Null extends ASN1PrimitiveValue<Void> {
+import java.util.Arrays;
 
-    private static final byte[] NULL_BYTES = new byte[0];
-
-    public ASN1Null() {
-        super(ASN1Tag.NULL, NULL_BYTES);
+public class ASN1OctetString extends ASN1String<byte[]> {
+    public ASN1OctetString(ASN1Tag<?> tag, byte[] bytes) {
+        super(tag, bytes);
     }
 
     @Override
-    public Void getValue() {
-        return null;
+    public byte[] getValue() {
+        return Arrays.copyOf(valueBytes, valueBytes.length);
     }
 
     @Override
-    protected int valueHash() {
-        return 0;
+    public int length() {
+        return valueBytes.length;
     }
 
-    public static class Parser extends ASN1Parser<ASN1Null> {
+    public static class Parser extends ASN1Parser<ASN1OctetString> {
+
         public Parser(ASN1Decoder decoder) {
             super(decoder);
         }
 
         @Override
-        public ASN1Null parse(ASN1Tag<ASN1Null> asn1Tag, byte[] value) {
-            Checks.checkState(value.length == 0, "ASN.1 NULL can not have a value");
-            return new ASN1Null();
+        public ASN1OctetString parse(ASN1Tag<ASN1OctetString> asn1Tag, byte[] value) throws ASN1ParseException {
+            return new ASN1OctetString(asn1Tag, value);
         }
     }
 }

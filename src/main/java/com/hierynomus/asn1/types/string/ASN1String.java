@@ -15,6 +15,7 @@
  */
 package com.hierynomus.asn1.types.string;
 
+import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Primitive;
@@ -37,7 +38,7 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
     @Override
     public Iterator<ASN1Object> iterator() {
         if (tag.getAsn1Encoding() == ASN1Tag.ASN1Encoding.Constructed) {
-            return ASN1Tag.SEQUENCE.newParser(ASN1Tag.ASN1Encoding.Constructed).parse(valueBytes).iterator();
+            return ASN1Tag.SEQUENCE.newParser(new BERDecoder()).parse(ASN1Tag.SEQUENCE, valueBytes).iterator();
         } else {
             return Collections.<ASN1Object>singletonList(this).iterator();
         }

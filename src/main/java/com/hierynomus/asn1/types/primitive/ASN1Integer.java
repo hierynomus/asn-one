@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types.primitive;
 
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.math.BigInteger;
@@ -47,9 +48,13 @@ public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
         return value.hashCode();
     }
 
-    public static class Parser implements ASN1Parser<ASN1Integer> {
+    public static class Parser extends ASN1Parser<ASN1Integer> {
+        public Parser(ASN1Decoder decoder) {
+            super(decoder);
+        }
+
         @Override
-        public ASN1Integer parse(byte[] value) {
+        public ASN1Integer parse(ASN1Tag<ASN1Integer> asn1Tag, byte[] value) {
             return new ASN1Integer(value, new BigInteger(value));
         }
     }

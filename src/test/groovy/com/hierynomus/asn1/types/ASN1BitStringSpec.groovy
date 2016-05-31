@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.encodingrules.ber.BERDecoder
 import com.hierynomus.asn1.types.string.ASN1BitString
 import spock.lang.Specification
 
@@ -23,7 +24,7 @@ class ASN1BitStringSpec extends Specification {
 
   def "should parse an ASN.1 BIT STRING"() {
     given:
-    def object = new ASN1InputStream(bytes as byte[]).readObject()
+    def object = new ASN1InputStream(new BERDecoder(), bytes as byte[]).readObject()
     expect:
     object instanceof ASN1BitString
     with(object as ASN1BitString) { ASN1BitString bs ->
@@ -36,5 +37,17 @@ class ASN1BitStringSpec extends Specification {
     where:
     bytes                                | length | values
     [0x03, 0x04, 0x02, 0xF0, 0xF0, 0xF4] | 22     | [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1]
+  }
+
+  def "should retain knowledge that the ASN.1 BIT STRING was in Constructed Encoding"() {
+    given:
+    def is = new ASN1InputStream(new BERDecoder(), [0x23, 0x08, 0x03, 0x02, 0xF0, 0xF0, 0x03, 0x02, 0x02, 0xF4] as byte[])
+
+    when:
+    def object = is.readObject()
+
+    then:
+    object.getTag().getAsn1Encoding() == ASN1Tag.ASN1Encoding.Constructed
+    (object as ASN1BitString).length() == 22
   }
 }

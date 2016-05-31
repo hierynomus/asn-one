@@ -18,6 +18,7 @@ package com.hierynomus.asn1.types.constructed;
 import com.hierynomus.asn1.ASN1InputStream;
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
@@ -60,12 +61,16 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
         return objects.get(i);
     }
 
-    public static class Parser implements ASN1Parser<ASN1Sequence> {
+    public static class Parser extends ASN1Parser<ASN1Sequence> {
+
+        public Parser(ASN1Decoder decoder) {
+            super(decoder);
+        }
 
         @Override
-        public ASN1Sequence parse(byte[] value) throws ASN1ParseException {
+        public ASN1Sequence parse(ASN1Tag<ASN1Sequence> asn1Tag, byte[] value) throws ASN1ParseException {
             List<ASN1Object> list = new ArrayList<>();
-            try (ASN1InputStream stream = new ASN1InputStream(value)) {
+            try (ASN1InputStream stream = new ASN1InputStream(decoder, value)) {
                 for (ASN1Object asn1Object : stream) {
                     list.add(asn1Object);
                 }

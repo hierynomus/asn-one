@@ -17,11 +17,13 @@ package com.hierynomus.asn1.types;
 
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.constructed.ASN1Sequence;
 import com.hierynomus.asn1.types.constructed.ASN1Set;
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObject;
 import com.hierynomus.asn1.types.primitive.*;
 import com.hierynomus.asn1.types.string.ASN1BitString;
+import com.hierynomus.asn1.types.string.ASN1OctetString;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -83,56 +85,56 @@ public abstract class ASN1Tag<T extends ASN1Object> {
 
     public static final ASN1Tag<ASN1Boolean> BOOLEAN = new ASN1Tag<ASN1Boolean>(Universal, 0x01, ASN1Encoding.Primitive) {
         @Override
-        public ASN1Parser<ASN1Boolean> newParser() {
-            return new ASN1Boolean.Parser();
+        public ASN1Parser<ASN1Boolean> newParser(ASN1Decoder decoder) {
+            return new ASN1Boolean.Parser(decoder);
         }
     };
     public static final ASN1Tag<ASN1Integer> INTEGER = new ASN1Tag<ASN1Integer>(Universal, 0x02, ASN1Encoding.Primitive) {
         @Override
-        public ASN1Parser<ASN1Integer> newParser() {
-            return new ASN1Integer.Parser();
+        public ASN1Parser<ASN1Integer> newParser(ASN1Decoder decoder) {
+            return new ASN1Integer.Parser(decoder);
         }
     };
-    public static final ASN1Tag<ASN1BitString> BIT_STRING = new ASN1Tag<ASN1BitString>(Universal, 0x03, ASN1Encoding.Primitive) {
+    public static final ASN1Tag<ASN1BitString> BIT_STRING = new ASN1Tag<ASN1BitString>(Universal, 0x03, ASN1Encoding.Primitive, of(ASN1Encoding.Primitive, ASN1Encoding.Constructed)) {
         @Override
-        public ASN1Parser<ASN1BitString> newParser() {
-            return new ASN1BitString.Parser();
+        public ASN1Parser<ASN1BitString> newParser(ASN1Decoder decoder) {
+            return new ASN1BitString.Parser(decoder);
         }
     };
     public static final ASN1Tag<?> OCTET_STRING = new ASN1Tag(Universal, 0x04, of(ASN1Encoding.Primitive, ASN1Encoding.Constructed)) {
         @Override
-        public ASN1Parser<?> newParser() {
-            return null;
+        public ASN1Parser<?> newParser(ASN1Decoder decoder) {
+            return new ASN1OctetString.Parser(decoder);
         }
     };
     public static final ASN1Tag<ASN1Null> NULL = new ASN1Tag<ASN1Null>(Universal, 0x05, ASN1Encoding.Primitive) {
         @Override
-        public ASN1Parser<ASN1Null> newParser() {
-            return new ASN1Null.Parser();
+        public ASN1Parser<ASN1Null> newParser(ASN1Decoder decoder) {
+            return new ASN1Null.Parser(decoder);
         }
     };
     public static final ASN1Tag<ASN1ObjectIdentifier> OBJECT_IDENTIFIER = new ASN1Tag<ASN1ObjectIdentifier>(Universal, 0x06, ASN1Encoding.Primitive) {
         @Override
-        public ASN1Parser<ASN1ObjectIdentifier> newParser() {
-            return new ASN1ObjectIdentifier.Parser();
+        public ASN1Parser<ASN1ObjectIdentifier> newParser(ASN1Decoder decoder) {
+            return new ASN1ObjectIdentifier.Parser(decoder);
         }
     };
     public static final ASN1Tag<ASN1Enumerated> ENUMERATED = new ASN1Tag<ASN1Enumerated>(Universal, 0x0A, ASN1Encoding.Primitive) {
         @Override
-        public ASN1Parser<ASN1Enumerated> newParser() {
-            return new ASN1Enumerated.Parser();
+        public ASN1Parser<ASN1Enumerated> newParser(ASN1Decoder decoder) {
+            return new ASN1Enumerated.Parser(decoder);
         }
     };
     public static final ASN1Tag<ASN1Set> SET = new ASN1Tag<ASN1Set>(Universal, 0x11, ASN1Encoding.Constructed) {
         @Override
-        public ASN1Parser<ASN1Set> newParser() {
-            return new ASN1Set.Parser();
+        public ASN1Parser<ASN1Set> newParser(ASN1Decoder decoder) {
+            return new ASN1Set.Parser(decoder);
         }
     };
     public static final ASN1Tag<ASN1Sequence> SEQUENCE = new ASN1Tag<ASN1Sequence>(Universal, 0x10, ASN1Encoding.Constructed) {
         @Override
-        public ASN1Parser<ASN1Sequence> newParser() {
-            return new ASN1Sequence.Parser();
+        public ASN1Parser<ASN1Sequence> newParser(ASN1Decoder decoder) {
+            return new ASN1Sequence.Parser(decoder);
         }
     };
 
@@ -157,14 +159,14 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         tags.put(tag, this);
     }
 
-    public ASN1Tag asEncoded(ASN1Encoding asn1Encoding) {
+    public ASN1Tag<T> asEncoded(final ASN1Encoding asn1Encoding) {
         if (!supportedEncodings.contains(asn1Encoding)) {
             throw new IllegalArgumentException(format("The ASN.1 tag %s does not support encoding as %s", this, asn1Encoding));
         }
-        return new ASN1Tag(this.asn1TagClass, this.tag, asn1Encoding, this.supportedEncodings) {
+        return new ASN1Tag<T>(this.asn1TagClass, this.tag, asn1Encoding, this.supportedEncodings) {
             @Override
-            public ASN1Parser newParser() {
-                return ASN1Tag.this.newParser();
+            public ASN1Parser<T> newParser(ASN1Decoder decoder) {
+                return ASN1Tag.this.newParser(decoder);
             }
         };
     }
@@ -183,8 +185,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             case Private:
                 return new ASN1Tag(asn1TagClass, tag, of(ASN1Encoding.Primitive, ASN1Encoding.Constructed)) {
                     @Override
-                    public ASN1Parser<?> newParser() {
-                        return new ASN1TaggedObject.Parser(this);
+                    public ASN1Parser<?> newParser(ASN1Decoder decoder) {
+                        return new ASN1TaggedObject.Parser(decoder, this);
                     }
                 };
         }
@@ -207,7 +209,11 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         return asn1Encoding;
     }
 
-    public abstract ASN1Parser<T> newParser();
+    public boolean isConstructed() {
+        return asn1Encoding == ASN1Encoding.Constructed;
+    }
+
+    public abstract ASN1Parser<T> newParser(ASN1Decoder decoder);
 
     @Override
     public boolean equals(Object o) {

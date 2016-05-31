@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types
 
 import com.hierynomus.asn1.ASN1InputStream
 import com.hierynomus.asn1.ASN1ParseException
+import com.hierynomus.asn1.encodingrules.ber.BERDecoder
 import com.hierynomus.asn1.types.primitive.ASN1Integer
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -35,7 +36,7 @@ class ASN1IntegerSpec extends Specification {
   @Unroll
   def "should parse ASN.1 INTEGER with value #value"() {
     expect:
-    new ASN1InputStream(new ByteArrayInputStream(buffer as byte[])).readObject() == value
+    new ASN1InputStream(new BERDecoder(), new ByteArrayInputStream(buffer as byte[])).readObject() == value
 
     where:
     buffer                   | value
@@ -49,7 +50,7 @@ class ASN1IntegerSpec extends Specification {
 
   def "should fail when trying to read an ASN.1 Integer with the 'constructed' bit set"() {
     given:
-    def is = new ASN1InputStream([0x22, 0x01, 0x03] as byte[])
+    def is = new ASN1InputStream(new BERDecoder(), [0x22, 0x01, 0x03] as byte[])
 
     when:
     is.readObject()
