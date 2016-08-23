@@ -187,6 +187,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
                         return new ASN1TaggedObject.Parser(this);
                     }
                 };
+            default:
+                break;
         }
         throw new ASN1ParseException(format("Unknown ASN.1 tag '%s:%s' found", asn1TagClass, tag));
     }

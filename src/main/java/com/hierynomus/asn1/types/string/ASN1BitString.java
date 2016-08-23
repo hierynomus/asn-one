@@ -17,11 +17,7 @@ package com.hierynomus.asn1.types.string;
 
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.types.ASN1Tag;
-import com.hierynomus.asn1.types.constructed.ASN1Sequence;
-import com.hierynomus.asn1.types.primitive.ASN1PrimitiveValue;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
