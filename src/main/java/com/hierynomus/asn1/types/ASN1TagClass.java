@@ -13,24 +13,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1.types;
 
-import com.hierynomus.asn1.ASN1InputStream
-import com.hierynomus.asn1.types.primitive.ASN1Boolean
-import spock.lang.Specification
-import spock.lang.Unroll
+public enum ASN1TagClass {
+    Universal(0),
+    Application(0x40),
+    ContextSpecific(0x80),
+    Private(0xc0);
 
-class ASN1BooleanSpec extends Specification {
+    private int value;
 
-  @Unroll
-  def "should parse an ASN.1 BOOLEAN with value #value"() {
-    expect:
-    new ASN1InputStream(new ByteArrayInputStream(buffer as byte[])).readObject() == value
+    ASN1TagClass(int value) {
+        this.value = value;
+    }
 
-    where:
-    buffer | value
-    [0x01, 0x01, 0x0] | new ASN1Boolean(false)
-    [0x01, 0x01, 0x01] | new ASN1Boolean(true)
-    [0x01, 0x01, 0xFF] | new ASN1Boolean(true)
-  }
+    public static ASN1TagClass parseClass(byte tagByte) {
+        int classValue = (tagByte & 0xc0);
+        for (ASN1TagClass asn1TagClass : values()) {
+            if (asn1TagClass.value == classValue) {
+                return asn1TagClass;
+            }
+        }
+        throw new IllegalStateException("Could not parse ASN.1 Tag Class (should be impossible)");
+    }
 }

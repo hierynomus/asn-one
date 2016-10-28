@@ -13,8 +13,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1.types.constructed
 
+import com.hierynomus.asn1.types.ASN1Object
 import com.hierynomus.asn1.types.constructed.ASN1Set
 import com.hierynomus.asn1.types.primitive.ASN1Boolean
 import com.hierynomus.asn1.types.primitive.ASN1Integer

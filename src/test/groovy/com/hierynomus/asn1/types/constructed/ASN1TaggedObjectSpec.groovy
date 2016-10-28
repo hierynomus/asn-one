@@ -13,17 +13,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1.types.constructed
 
 import com.hierynomus.asn1.ASN1InputStream
 import com.hierynomus.asn1.ASN1ParseException
-import com.hierynomus.asn1.types.constructed.ASN1TaggedObject
+import com.hierynomus.asn1.types.ASN1Tag
 import com.hierynomus.asn1.types.primitive.ASN1ObjectIdentifier
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static com.hierynomus.asn1.types.ASN1Tag.ASN1TagClass.Application
-import static com.hierynomus.asn1.types.ASN1Tag.ASN1TagClass.ContextSpecific
+import static com.hierynomus.asn1.types.ASN1TagClass.Application
+import static com.hierynomus.asn1.types.ASN1TagClass.ContextSpecific
 
 @Unroll
 class ASN1TaggedObjectSpec extends Specification {

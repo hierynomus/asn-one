@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1.types.string
 
 import com.hierynomus.asn1.ASN1InputStream
 import com.hierynomus.asn1.types.string.ASN1BitString

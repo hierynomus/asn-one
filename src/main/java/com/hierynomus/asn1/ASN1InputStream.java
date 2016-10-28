@@ -15,9 +15,10 @@
  */
 package com.hierynomus.asn1;
 
+import com.hierynomus.asn1.types.ASN1Encoding;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
-import com.hierynomus.asn1.types.ASN1Tag.ASN1TagClass;
+import com.hierynomus.asn1.types.ASN1TagClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
     }
 
     public ASN1InputStream(byte[] value) {
-        super(new ByteArrayInputStream(value));
+        this(new ByteArrayInputStream(value));
     }
 
     public <T extends ASN1Object> T readObject() throws ASN1ParseException {
@@ -44,12 +45,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
             logger.trace("Read ASN.1 tag {}", tag);
             int length = readLength();
             logger.trace("Read ASN.1 object length: {}", length);
-            byte[] value = new byte[length];
-            int count = 0;
-            int read = 0;
-            while (count < length && ((read = read(value, count, length - count)) != -1)) {
-                count += read;
-            }
+            byte[] value = readValue(length);
 
             //noinspection unchecked
             return (T) tag.newParser().parse(value);
@@ -58,6 +54,16 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         } catch (Exception e) {
             throw new ASN1ParseException(e, "Cannot parse ASN.1 object from stream");
         }
+    }
+
+    private byte[] readValue(int length) throws IOException {
+        byte[] value = new byte[length];
+        int count = 0;
+        int read = 0;
+        while (count < length && ((read = read(value, count, length - count)) != -1)) {
+            count += read;
+        }
+        return value;
     }
 
     public Iterator<ASN1Object> iterator() {
@@ -87,7 +93,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
     private ASN1Tag readTag() throws IOException {
         int tagByte = read();
         ASN1TagClass asn1TagClass = ASN1TagClass.parseClass((byte) tagByte);
-        ASN1Tag.ASN1Encoding asn1Encoding = ASN1Tag.ASN1Encoding.parseEncoding((byte) tagByte);
+        ASN1Encoding asn1Encoding = ASN1Encoding.parseEncoding((byte) tagByte);
         int tag = tagByte & 0x1f;
         if (tag <= 0x1e) {
             return ASN1Tag.forTag(asn1TagClass, tag).asEncoded(asn1Encoding);

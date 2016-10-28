@@ -15,10 +15,7 @@
  */
 package com.hierynomus.asn1.types.string;
 
-import com.hierynomus.asn1.types.ASN1Constructed;
-import com.hierynomus.asn1.types.ASN1Object;
-import com.hierynomus.asn1.types.ASN1Primitive;
-import com.hierynomus.asn1.types.ASN1Tag;
+import com.hierynomus.asn1.types.*;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -36,7 +33,7 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
 
     @Override
     public Iterator<ASN1Object> iterator() {
-        if (tag.getAsn1Encoding() == ASN1Tag.ASN1Encoding.Constructed) {
+        if (tag.getAsn1Encoding() == ASN1Encoding.Constructed) {
             return ASN1Tag.SEQUENCE.newParser().parse(valueBytes).iterator();
         } else {
             return Collections.<ASN1Object>singletonList(this).iterator();

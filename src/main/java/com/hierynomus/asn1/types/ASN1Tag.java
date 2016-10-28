@@ -28,57 +28,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.hierynomus.asn1.types.ASN1Tag.ASN1TagClass.Universal;
+import static com.hierynomus.asn1.types.ASN1TagClass.Universal;
 import static java.lang.String.format;
 import static java.util.EnumSet.of;
 
 public abstract class ASN1Tag<T extends ASN1Object> {
-    public enum ASN1TagClass {
-        Universal(0),
-        Application(0x40),
-        ContextSpecific(0x80),
-        Private(0xc0);
-
-        private int value;
-
-        ASN1TagClass(int value) {
-            this.value = value;
-        }
-
-        public static ASN1TagClass parseClass(byte tagByte) {
-            int classValue = (tagByte & 0xc0);
-            for (ASN1TagClass asn1TagClass : values()) {
-                if (asn1TagClass.value == classValue) {
-                    return asn1TagClass;
-                }
-            }
-            throw new IllegalStateException("Could not parse ASN.1 Tag Class (should be impossible)");
-        }
-    }
-
-    public enum ASN1Encoding {
-        Primitive(0x0),
-        Constructed(0x20);
-
-        private int value;
-
-        ASN1Encoding(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-
-        public static ASN1Encoding parseEncoding(byte tagByte) {
-            if ((tagByte & 0x20) == 0) {
-                return Primitive;
-            } else {
-                return Constructed;
-            }
-        }
-    }
-
     private static Map<Integer, ASN1Tag<?>> tags = new HashMap<>();
 
     public static final ASN1Tag<ASN1Boolean> BOOLEAN = new ASN1Tag<ASN1Boolean>(Universal, 0x01, ASN1Encoding.Primitive) {
@@ -136,6 +90,18 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         }
     };
 
+    static {
+        tags.put(BOOLEAN.getTag(), BOOLEAN);
+        tags.put(INTEGER.getTag(), INTEGER);
+        tags.put(BIT_STRING.getTag(), BIT_STRING);
+        tags.put(OCTET_STRING.getTag(), OCTET_STRING);
+        tags.put(NULL.getTag(), NULL);
+        tags.put(OBJECT_IDENTIFIER.getTag(), OBJECT_IDENTIFIER);
+        tags.put(ENUMERATED.getTag(), ENUMERATED);
+        tags.put(SET.getTag(), SET);
+        tags.put(SEQUENCE.getTag(), SEQUENCE);
+    }
+
     private final ASN1TagClass asn1TagClass;
     private final int tag;
     private final EnumSet<ASN1Encoding> supportedEncodings;
@@ -154,7 +120,6 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         this.tag = tag;
         this.supportedEncodings = supportedEncodings;
         this.asn1Encoding = asn1Encoding;
-        tags.put(tag, this);
     }
 
     public ASN1Tag asEncoded(ASN1Encoding asn1Encoding) {
@@ -190,7 +155,7 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             default:
                 break;
         }
-        throw new ASN1ParseException(format("Unknown ASN.1 tag '%s:%s' found", asn1TagClass, tag));
+        throw new ASN1ParseException(format("Unknown ASN.1 tag '%s:%s' found (%s)", asn1TagClass, tag, ASN1Tag.tags));
     }
 
     public int getTag() {
