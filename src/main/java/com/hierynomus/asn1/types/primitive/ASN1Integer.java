@@ -15,10 +15,12 @@
  */
 package com.hierynomus.asn1.types.primitive;
 
-import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.types.ASN1Tag;
-
+import java.io.IOException;
 import java.math.BigInteger;
+import com.hierynomus.asn1.ASN1OutputStream;
+import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.ASN1Serializer;
+import com.hierynomus.asn1.types.ASN1Tag;
 
 public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
     private BigInteger value;
@@ -30,9 +32,10 @@ public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
     public ASN1Integer(BigInteger value) {
         super(ASN1Tag.INTEGER);
         this.value = value;
+        this.valueBytes = value.toByteArray();
     }
 
-    public ASN1Integer(byte[] valueBytes, BigInteger value) {
+    private ASN1Integer(byte[] valueBytes, BigInteger value) {
         super(ASN1Tag.INTEGER, valueBytes);
         this.value = value;
     }
@@ -53,4 +56,17 @@ public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
             return new ASN1Integer(value, new BigInteger(value));
         }
     }
+
+    public static class Serializer implements ASN1Serializer<ASN1Integer> {
+        @Override
+        public int serializedLength(final ASN1Integer asn1Object) {
+            return asn1Object.valueBytes.length;
+        }
+
+        @Override
+        public void serialize(final ASN1Integer asn1Object, final ASN1OutputStream stream) throws IOException {
+            stream.write(asn1Object.valueBytes);
+        }
+    }
+
 }

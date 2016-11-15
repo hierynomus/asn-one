@@ -15,11 +15,12 @@
  */
 package com.hierynomus.asn1.types.primitive;
 
+import java.math.BigInteger;
+import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.types.ASN1Tag;
-
-import java.math.BigInteger;
 
 public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
     private final BigInteger value;
@@ -42,4 +43,17 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
             return new ASN1Enumerated(ASN1Tag.ENUMERATED, value1, value);
         }
     }
+
+    public static class Serializer implements ASN1Serializer<ASN1Enumerated> {
+        @Override
+        public int serializedLength(final ASN1Enumerated asn1Object) {
+            return 0;
+        }
+
+        @Override
+        public void serialize(final ASN1Enumerated asn1Object, final ASN1OutputStream stream) {
+
+        }
+    }
+
 }

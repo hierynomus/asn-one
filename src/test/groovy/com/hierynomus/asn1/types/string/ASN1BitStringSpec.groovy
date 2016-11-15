@@ -37,4 +37,6 @@ class ASN1BitStringSpec extends Specification {
     bytes                                | length | values
     [0x03, 0x04, 0x02, 0xF0, 0xF0, 0xF4] | 22     | [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1]
   }
+
+
 }

@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types.primitive
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.ASN1OutputStream
 import com.hierynomus.asn1.types.primitive.ASN1Boolean
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -33,4 +34,22 @@ class ASN1BooleanSpec extends Specification {
     [0x01, 0x01, 0x01] | new ASN1Boolean(true)
     [0x01, 0x01, 0xFF] | new ASN1Boolean(true)
   }
+
+  @Unroll
+  def "should write ASN.1 BOOLEAN #value as bytes #bytes"() {
+    given:
+    def stream = new ByteArrayOutputStream()
+
+    when:
+    new ASN1OutputStream(stream).writeObject(value)
+
+    then:
+    stream.toByteArray() == bytes
+
+    where:
+    value | bytes
+    new ASN1Boolean(false) | [0x01, 0x01, 0x00] as byte[]
+    new ASN1Boolean(true) | [0x01, 0x01, 0x01] as byte[]
+  }
+
 }

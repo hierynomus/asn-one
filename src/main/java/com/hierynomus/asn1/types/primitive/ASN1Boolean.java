@@ -15,7 +15,10 @@
  */
 package com.hierynomus.asn1.types.primitive;
 
+import java.io.IOException;
+import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.util.Checks;
 
@@ -50,4 +53,17 @@ public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
             return new ASN1Boolean(value, value[0] != 0x0);
         }
     }
+
+    public static class Serializer implements ASN1Serializer<ASN1Boolean> {
+        @Override
+        public int serializedLength(final ASN1Boolean asn1Object) {
+            return 1;
+        }
+
+        @Override
+        public void serialize(final ASN1Boolean asn1Object, final ASN1OutputStream stream) throws IOException {
+            stream.write(asn1Object.value ? 0x01 : 0x00);
+        }
+    }
+
 }

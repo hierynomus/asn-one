@@ -15,11 +15,12 @@
  */
 package com.hierynomus.asn1.types.string;
 
-import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.types.ASN1Tag;
-
 import java.util.Arrays;
 import java.util.BitSet;
+import com.hierynomus.asn1.ASN1OutputStream;
+import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.ASN1Serializer;
+import com.hierynomus.asn1.types.ASN1Tag;
 
 public class ASN1BitString extends ASN1String<BitSet> {
 
@@ -66,4 +67,17 @@ public class ASN1BitString extends ASN1String<BitSet> {
             return new ASN1BitString(bits, unusedBits);
         }
     }
+
+    public static class Serializer implements ASN1Serializer<ASN1BitString> {
+        @Override
+        public int serializedLength(final ASN1BitString asn1Object) {
+            return 0;
+        }
+
+        @Override
+        public void serialize(final ASN1BitString asn1Object, final ASN1OutputStream stream) {
+
+        }
+    }
+
 }

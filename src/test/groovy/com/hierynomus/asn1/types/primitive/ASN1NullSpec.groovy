@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types.primitive
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.ASN1OutputStream
 import com.hierynomus.asn1.types.primitive.ASN1Null
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -30,5 +31,20 @@ class ASN1NullSpec extends Specification {
     where:
     buffer       | value
     [0x05, 0x00] | new ASN1Null()
+  }
+
+  def "should write ASN.1 NULL as bytes #bytes"() {
+    given:
+    def stream = new ByteArrayOutputStream()
+
+    when:
+    new ASN1OutputStream(stream).writeObject(value)
+
+    then:
+    stream.toByteArray() == bytes
+
+    where:
+    value | bytes
+    new ASN1Null() | [0x05, 0x00] as byte[]
   }
 }

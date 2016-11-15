@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types;
 
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.types.constructed.ASN1Sequence;
 import com.hierynomus.asn1.types.constructed.ASN1Set;
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObject;
@@ -40,11 +41,21 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         public ASN1Parser<ASN1Boolean> newParser() {
             return new ASN1Boolean.Parser();
         }
+
+        @Override
+        public ASN1Serializer<ASN1Boolean> newSerializer() {
+            return new ASN1Boolean.Serializer();
+        }
     };
     public static final ASN1Tag<ASN1Integer> INTEGER = new ASN1Tag<ASN1Integer>(Universal, 0x02, ASN1Encoding.Primitive) {
         @Override
         public ASN1Parser<ASN1Integer> newParser() {
             return new ASN1Integer.Parser();
+        }
+
+        @Override
+        public ASN1Serializer<ASN1Integer> newSerializer() {
+            return new ASN1Integer.Serializer();
         }
     };
     public static final ASN1Tag<ASN1BitString> BIT_STRING = new ASN1Tag<ASN1BitString>(Universal, 0x03, ASN1Encoding.Primitive) {
@@ -52,11 +63,21 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         public ASN1Parser<ASN1BitString> newParser() {
             return new ASN1BitString.Parser();
         }
+
+        @Override
+        public ASN1Serializer<ASN1BitString> newSerializer() {
+            return new ASN1BitString.Serializer();
+        }
     };
     public static final ASN1Tag<?> OCTET_STRING = new ASN1Tag(Universal, 0x04, of(ASN1Encoding.Primitive, ASN1Encoding.Constructed)) {
         @Override
         public ASN1Parser<?> newParser() {
-            return null;
+            return null; // TODO
+        }
+
+        @Override
+        public ASN1Serializer newSerializer() {
+            return null; // TODO
         }
     };
     public static final ASN1Tag<ASN1Null> NULL = new ASN1Tag<ASN1Null>(Universal, 0x05, ASN1Encoding.Primitive) {
@@ -64,11 +85,21 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         public ASN1Parser<ASN1Null> newParser() {
             return new ASN1Null.Parser();
         }
+
+        @Override
+        public ASN1Serializer<ASN1Null> newSerializer() {
+            return new ASN1Null.Serializer();
+        }
     };
     public static final ASN1Tag<ASN1ObjectIdentifier> OBJECT_IDENTIFIER = new ASN1Tag<ASN1ObjectIdentifier>(Universal, 0x06, ASN1Encoding.Primitive) {
         @Override
         public ASN1Parser<ASN1ObjectIdentifier> newParser() {
             return new ASN1ObjectIdentifier.Parser();
+        }
+
+        @Override
+        public ASN1Serializer<ASN1ObjectIdentifier> newSerializer() {
+            return new ASN1ObjectIdentifier.Serializer();
         }
     };
     public static final ASN1Tag<ASN1Enumerated> ENUMERATED = new ASN1Tag<ASN1Enumerated>(Universal, 0x0A, ASN1Encoding.Primitive) {
@@ -76,11 +107,21 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         public ASN1Parser<ASN1Enumerated> newParser() {
             return new ASN1Enumerated.Parser();
         }
+
+        @Override
+        public ASN1Serializer<ASN1Enumerated> newSerializer() {
+            return new ASN1Enumerated.Serializer();
+        }
     };
     public static final ASN1Tag<ASN1Set> SET = new ASN1Tag<ASN1Set>(Universal, 0x11, ASN1Encoding.Constructed) {
         @Override
         public ASN1Parser<ASN1Set> newParser() {
             return new ASN1Set.Parser();
+        }
+
+        @Override
+        public ASN1Serializer<ASN1Set> newSerializer() {
+            return new ASN1Set.Serializer();
         }
     };
     public static final ASN1Tag<ASN1Sequence> SEQUENCE = new ASN1Tag<ASN1Sequence>(Universal, 0x10, ASN1Encoding.Constructed) {
@@ -88,7 +129,11 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         public ASN1Parser<ASN1Sequence> newParser() {
             return new ASN1Sequence.Parser();
         }
-    };
+
+        @Override
+        public ASN1Serializer<ASN1Sequence> newSerializer() {
+            return new ASN1Sequence.Serializer();
+        }    };
 
     static {
         tags.put(BOOLEAN.getTag(), BOOLEAN);
@@ -131,6 +176,11 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             public ASN1Parser newParser() {
                 return ASN1Tag.this.newParser();
             }
+
+            @Override
+            public ASN1Serializer newSerializer() {
+                return ASN1Tag.this.newSerializer();
+            }
         };
     }
 
@@ -150,6 +200,11 @@ public abstract class ASN1Tag<T extends ASN1Object> {
                     @Override
                     public ASN1Parser<?> newParser() {
                         return new ASN1TaggedObject.Parser(this);
+                    }
+
+                    @Override
+                    public ASN1Serializer newSerializer() {
+                        return new ASN1TaggedObject.Serializer(this);
                     }
                 };
             default:
@@ -175,6 +230,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
     }
 
     public abstract ASN1Parser<T> newParser();
+
+    public abstract ASN1Serializer<T> newSerializer();
 
     @Override
     public boolean equals(Object o) {
