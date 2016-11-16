@@ -13,17 +13,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.encodingrules;
+package com.hierynomus.asn1.annotations;
 
-import com.hierynomus.asn1.types.ASN1Tag;
+import com.hierynomus.asn1.ASN1Parser;
 
-import java.io.InputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface ASN1Decoder {
-
-    ASN1Tag<?> readTag(InputStream is);
-
-    int readLength(InputStream is);
-
-    byte[] readValue(int length, InputStream is);
+@Target(ElementType.ANNOTATION_TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ParsedBy {
+    Class<? extends ASN1Parser> parser();
 }

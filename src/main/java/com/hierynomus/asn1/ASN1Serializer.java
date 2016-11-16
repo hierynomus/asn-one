@@ -13,23 +13,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1;
 
-import com.hierynomus.asn1.ASN1InputStream
-import com.hierynomus.asn1.encodingrules.ber.BERDecoder
-import com.hierynomus.asn1.types.primitive.ASN1Null
-import spock.lang.Specification
-import spock.lang.Unroll
+import java.io.IOException;
+import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.types.ASN1Object;
 
-@Unroll
-class ASN1NullSpec extends Specification {
+public abstract class ASN1Serializer<T extends ASN1Object> {
+    protected final ASN1Encoder encoder;
 
-  def "should parse ASN.1 NULL with value #value"() {
-    expect:
-    new ASN1InputStream(new BERDecoder(), new ByteArrayInputStream(buffer as byte[])).readObject() == value
+    public ASN1Serializer(ASN1Encoder encoder) {
+        this.encoder = encoder;
+    }
 
-    where:
-    buffer       | value
-    [0x05, 0x00] | new ASN1Null()
-  }
+    public abstract int serializedLength(T asn1Object);
+
+    public abstract void serialize(T asn1Object, ASN1OutputStream stream) throws IOException;
 }

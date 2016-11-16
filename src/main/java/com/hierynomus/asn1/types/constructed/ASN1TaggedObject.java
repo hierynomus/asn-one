@@ -15,10 +15,9 @@
  */
 package com.hierynomus.asn1.types.constructed;
 
-import com.hierynomus.asn1.ASN1InputStream;
-import com.hierynomus.asn1.ASN1ParseException;
-import com.hierynomus.asn1.ASN1Parser;
+import com.hierynomus.asn1.*;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
+import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
@@ -68,6 +67,25 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         @Override
         public ASN1TaggedObject parse(ASN1Tag<ASN1TaggedObject> asn1Tag, byte[] value) {
             return new ASN1TaggedObject(tag, value, decoder);
+        }
+    }
+
+    public static class Serializer extends ASN1Serializer<ASN1TaggedObject> {
+        private final ASN1Tag tag;
+
+        public Serializer(final ASN1Encoder encoder, final ASN1Tag asn1Tag) {
+            super(encoder);
+            this.tag = asn1Tag;
+        }
+
+        @Override
+        public int serializedLength(final ASN1TaggedObject asn1Object) {
+            return 0;
+        }
+
+        @Override
+        public void serialize(final ASN1TaggedObject asn1Object, final ASN1OutputStream stream) {
+
         }
     }
 

@@ -1,10 +1,14 @@
+import java.text.SimpleDateFormat
+
 plugins {
   id "java"
   id "groovy"
-  id "idea"
-  id "maven"
+  id "maven-publish"
   id "org.ajoberstar.release-opinion" version "1.4.2"
   id "com.github.hierynomus.license" version "0.12.1"
+  id "com.jfrog.bintray" version "1.7"
+  id 'ru.vyarus.pom' version '1.0.3'
+  id 'ru.vyarus.github-info' version '1.1.0'
 }
 
 repositories {
@@ -15,13 +19,6 @@ group = "com.hierynomus.asn-one"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-
-idea {
-  module {
-    downloadJavadoc = true
-    downloadSources = true
-  }
-}
 
 configurations.compile.transitive = false
 
@@ -63,6 +60,8 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 }
 
 tasks.withType(Test) {
+  include "**/*Test.*"
+  include "**/*Spec.*"
   afterSuite { descriptor, result ->
     def indicator = "\u001B[32m✓\u001b[0m"
     if (result.failedTestCount > 0) {
@@ -73,3 +72,67 @@ tasks.withType(Test) {
 }
 
 project.tasks.compileGroovy.onlyIf { false }
+
+github {
+  user 'hierynomus'
+  license 'Apache'
+}
+
+pom {
+  description 'ASN.1 serialization and parsing library'
+  url 'https://github.com/hierynomus/asn-one'
+  developers {
+    developer {
+      id "hierynomus"
+      name "Jeroen van Erp"
+      email "jeroen@hierynomus.com"
+      roles {
+        role "Lead developer"
+      }
+    }
+  }
+}
+
+publishing {
+  publications {
+    AsnOne(MavenPublication) {
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+    }
+  }
+}
+
+if (project.hasProperty("bintrayUsername") && project.hasProperty("bintrayApiKey")) {
+  bintray {
+    user = project.property("bintrayUsername")
+    key = project.property("bintrayApiKey")
+    publish = true
+    publications = ["AsnOne"]
+    pkg {
+      repo = "maven"
+      name = project.name
+      licenses = ["Apache-2.0"]
+      vcsUrl = "https://github.com/hierynomus/asn-one.git"
+      labels = ["asn1", "ASN.1", "serialization", "parser"]
+      githubRepo = "hierynomus/asn-one"
+      version {
+        name = project.version.toString()
+        vcsTag = "v${project.version}"
+        released = new SimpleDateFormat('yyyy-MM-dd\'T\'HH:mm:ss.SSSZZ').format(new Date())
+        gpg {
+          sign = true
+          passphrase = project.property("signing.password")
+        }
+        mavenCentralSync {
+          sync = true
+          user = project.property("sonatypeUsername")
+          password = project.property("sonatypePassword")
+          close = 1
+        }
+      }
+    }
+  }
+}
+
+project.tasks.release.dependsOn(project.tasks.bintrayUpload)

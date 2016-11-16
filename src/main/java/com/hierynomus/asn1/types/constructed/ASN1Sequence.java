@@ -15,18 +15,17 @@
  */
 package com.hierynomus.asn1.types.constructed;
 
-import com.hierynomus.asn1.ASN1InputStream;
-import com.hierynomus.asn1.ASN1ParseException;
-import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.types.ASN1Constructed;
-import com.hierynomus.asn1.types.ASN1Object;
-import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import com.hierynomus.asn1.*;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
+import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.types.ASN1Constructed;
+import com.hierynomus.asn1.types.ASN1Object;
+import com.hierynomus.asn1.types.ASN1Tag;
 
 public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Constructed {
     private final List<ASN1Object> objects;
@@ -80,4 +79,34 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
             return new ASN1Sequence(list, value);
         }
     }
+
+    public static class Serializer extends ASN1Serializer<ASN1Sequence> {
+        public Serializer(final ASN1Encoder encoder) {
+            super(encoder);
+        }
+
+        @Override
+        public int serializedLength(final ASN1Sequence asn1Object) {
+            if (asn1Object.bytes != null) {
+                return asn1Object.bytes.length;
+            }
+            int length = 0;
+            for (ASN1Object object : asn1Object) {
+                length += object.getTag().newSerializer(encoder).serializedLength(object);
+            }
+            return length;
+        }
+
+        @Override
+        public void serialize(final ASN1Sequence asn1Object, final ASN1OutputStream stream) throws IOException {
+            if (asn1Object.bytes != null) {
+                stream.write(asn1Object.bytes);
+            } else {
+                for (ASN1Object object : asn1Object) {
+                    stream.writeObject(object);
+                }
+            }
+        }
+    }
+
 }

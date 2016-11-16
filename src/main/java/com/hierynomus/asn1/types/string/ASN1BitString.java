@@ -15,19 +15,15 @@
  */
 package com.hierynomus.asn1.types.string;
 
-import com.hierynomus.asn1.ASN1InputStream;
-import com.hierynomus.asn1.ASN1ParseException;
-import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.types.ASN1Object;
-import com.hierynomus.asn1.types.ASN1Tag;
-import com.hierynomus.asn1.types.constructed.ASN1Sequence;
-import com.hierynomus.asn1.util.Checks;
-
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
-
+import com.hierynomus.asn1.*;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
+import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.types.ASN1Tag;
+import com.hierynomus.asn1.util.Checks;
 public class ASN1BitString extends ASN1String<BitSet> {
 
     private int unusedBits;
@@ -76,13 +72,20 @@ public class ASN1BitString extends ASN1String<BitSet> {
             if (asn1Tag.isConstructed()) {
                 ASN1InputStream stream = new ASN1InputStream(decoder, value);
                 try {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    int unusedBits = 0;
                     while(stream.available() > 0) {
                         ASN1Tag subTag = stream.readTag();
                         Checks.checkState(subTag.getTag() == asn1Tag.getTag(), "Expected an ASN.1 BIT STRING as Constructed object, got: %s", subTag);
                         int i = stream.readLength();
                         byte[] subValue = stream.readValue(i);
+                        baos.write(subValue, 1, subValue.length - 1);
+                        if (stream.available() <= 0) {
+                            // Last ASN.1 BitString
+                            unusedBits = subValue[0];
+                        }
                     }
-                    return null;
+                    return new ASN1BitString(asn1Tag, baos.toByteArray(), unusedBits);
                 } catch (IOException e) {
                     throw new ASN1ParseException(e, "Unable to parse Constructed ASN.1 BIT STRING");
                 }
@@ -93,4 +96,21 @@ public class ASN1BitString extends ASN1String<BitSet> {
             }
         }
     }
+
+    public static class Serializer extends ASN1Serializer<ASN1BitString> {
+        public Serializer(final ASN1Encoder encoder) {
+            super(encoder);
+        }
+
+        @Override
+        public int serializedLength(final ASN1BitString asn1Object) {
+            return 0;
+        }
+
+        @Override
+        public void serialize(final ASN1BitString asn1Object, final ASN1OutputStream stream) {
+
+        }
+    }
+
 }

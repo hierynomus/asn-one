@@ -13,12 +13,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1.types.primitive
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.ASN1OutputStream
 import com.hierynomus.asn1.ASN1ParseException
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder
-import com.hierynomus.asn1.types.primitive.ASN1Integer
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -33,6 +33,8 @@ class ASN1IntegerSpec extends Specification {
                           0x9d, 0x7c, 0x92, 0x71, 0xe1, 0xb2, 0x2f, 0x5c, 0x8d, 0xee, 0xf0, 0xf1, 0x17, 0x1e, 0xd2, 0x5f,
                           0x31, 0x5b, 0xb1, 0x9c, 0xbc, 0x20, 0x55, 0xbf, 0x3a, 0x37, 0x42, 0x45, 0x75, 0xdc, 0x90, 0x65]
 
+  static def INT_VAL = "101038645214968213029489864879507742420925199145132483818978980455132582258676381289000109319204510275496178360219909358646064503513889573494768497419381751359787623037449375660247011308028102339473875820259375735204357343091558075960601364303443174344509161224592926325506446708043127306053676664799729848421"
+
   @Unroll
   def "should parse ASN.1 INTEGER with value #value"() {
     expect:
@@ -45,7 +47,7 @@ class ASN1IntegerSpec extends Specification {
     [0x02, 0x01, 0x80]       | new ASN1Integer(new BigInteger(-128))
     [0x02, 0x02, 0x00, 0x80] | new ASN1Integer(new BigInteger(128))
     [0x02, 0x01, 0x83]       | new ASN1Integer(new BigInteger(-125))
-    LARGE_INT                | new ASN1Integer(new BigInteger("101038645214968213029489864879507742420925199145132483818978980455132582258676381289000109319204510275496178360219909358646064503513889573494768497419381751359787623037449375660247011308028102339473875820259375735204357343091558075960601364303443174344509161224592926325506446708043127306053676664799729848421"))
+    LARGE_INT                | new ASN1Integer(new BigInteger(INT_VAL))
   }
 
   def "should fail when trying to read an ASN.1 Integer with the 'constructed' bit set"() {
@@ -60,4 +62,26 @@ class ASN1IntegerSpec extends Specification {
     def wrapped = ex.getCause()
     wrapped.message ==~ "The ASN.1 tag .* does not support encoding as Constructed"
   }
+
+  @Unroll
+  def "should write ASN.1 INTEGER #value as bytes #bytes"() {
+    given:
+    def stream = new ByteArrayOutputStream()
+
+    when:
+    new ASN1OutputStream(null, stream).writeObject(value)
+
+    then:
+    stream.toByteArray() == bytes as byte[]
+
+    where:
+    value                                    | bytes
+    new ASN1Integer(new BigInteger(3))       | [0x02, 0x01, 0x03]
+    new ASN1Integer(new BigInteger(127))     | [0x02, 0x01, 0x7F]
+    new ASN1Integer(new BigInteger(-128))    | [0x02, 0x01, 0x80]
+    new ASN1Integer(new BigInteger(128))     | [0x02, 0x02, 0x00, 0x80]
+    new ASN1Integer(new BigInteger(-125))    | [0x02, 0x01, 0x83]
+    new ASN1Integer(new BigInteger(INT_VAL)) | LARGE_INT
+  }
+
 }

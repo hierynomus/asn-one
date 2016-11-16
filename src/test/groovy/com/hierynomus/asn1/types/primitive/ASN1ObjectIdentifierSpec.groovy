@@ -13,11 +13,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1.types.primitive
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.ASN1OutputStream
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder
-import com.hierynomus.asn1.types.primitive.ASN1ObjectIdentifier
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -32,6 +32,25 @@ class ASN1ObjectIdentifierSpec extends Specification {
     buffer                                                             | value
     [0x06, 0x03, 0x55, 0x04, 0x03]                                     | new ASN1ObjectIdentifier("2.5.4.3")
     [0x06, 0x09, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x82, 0x37, 0x15, 0x14] | new ASN1ObjectIdentifier("1.3.6.1.4.1.311.21.20")
-    [0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02] | new ASN1ObjectIdentifier("1.2.840.113549.1.7.2")
+    [0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02] | new ASN1ObjectIdentifier("1.2.840.113549.1.7.2")
   }
+
+  @Unroll
+  def "should write ASN.1 OBJECT IDENTIFIER #value as bytes #bytes"() {
+    given:
+    def stream = new ByteArrayOutputStream()
+
+    when:
+    new ASN1OutputStream(null, stream).writeObject(value)
+
+    then:
+    stream.toByteArray() == bytes as byte[]
+
+    where:
+    value                                    | bytes
+    new ASN1ObjectIdentifier("2.5.4.3") | [0x06, 0x03, 0x55, 0x04, 0x03]
+    new ASN1ObjectIdentifier("1.3.6.1.4.1.311.21.20") | [0x06, 0x09, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x82, 0x37, 0x15, 0x14]
+    new ASN1ObjectIdentifier("1.2.840.113549.1.7.2") | [0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02]
+  }
+
 }

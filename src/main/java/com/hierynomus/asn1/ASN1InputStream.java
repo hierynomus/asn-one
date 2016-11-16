@@ -15,17 +15,16 @@
  */
 package com.hierynomus.asn1;
 
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.types.ASN1Object;
-import com.hierynomus.asn1.types.ASN1Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
+import com.hierynomus.asn1.types.ASN1Object;
+import com.hierynomus.asn1.types.ASN1Tag;
 
 public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1Object> {
     private static final Logger logger = LoggerFactory.getLogger(ASN1InputStream.class);

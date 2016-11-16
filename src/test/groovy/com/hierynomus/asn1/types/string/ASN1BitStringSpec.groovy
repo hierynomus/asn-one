@@ -13,11 +13,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.types
+package com.hierynomus.asn1.types.string
 
 import com.hierynomus.asn1.ASN1InputStream
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder
-import com.hierynomus.asn1.types.string.ASN1BitString
+import com.hierynomus.asn1.types.ASN1Encoding
 import spock.lang.Specification
 
 class ASN1BitStringSpec extends Specification {
@@ -41,13 +41,13 @@ class ASN1BitStringSpec extends Specification {
 
   def "should retain knowledge that the ASN.1 BIT STRING was in Constructed Encoding"() {
     given:
-    def is = new ASN1InputStream(new BERDecoder(), [0x23, 0x08, 0x03, 0x02, 0xF0, 0xF0, 0x03, 0x02, 0x02, 0xF4] as byte[])
+    def is = new ASN1InputStream(new BERDecoder(), [0x23, 0x09, 0x03, 0x03, 0x0, 0xF0, 0xF0, 0x03, 0x02, 0x02, 0xF4] as byte[])
 
     when:
     def object = is.readObject()
 
     then:
-    object.getTag().getAsn1Encoding() == ASN1Tag.ASN1Encoding.Constructed
+    object.getTag().getAsn1Encoding() == ASN1Encoding.Constructed
     (object as ASN1BitString).length() == 22
   }
 }
