@@ -24,6 +24,7 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.util.Checks;
+
 public class ASN1BitString extends ASN1String<BitSet> {
 
     private int unusedBits;
@@ -44,6 +45,7 @@ public class ASN1BitString extends ASN1String<BitSet> {
 
     /**
      * Check whether bit 'x' is set in the ASN.1 BIT_STRING
+     *
      * @param x The bit to check
      * @return <code>true</code> if bit 'x' is set, <code>false</code> otherwise.
      */
@@ -74,7 +76,7 @@ public class ASN1BitString extends ASN1String<BitSet> {
                 try {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     int unusedBits = 0;
-                    while(stream.available() > 0) {
+                    while (stream.available() > 0) {
                         ASN1Tag subTag = stream.readTag();
                         Checks.checkState(subTag.getTag() == asn1Tag.getTag(), "Expected an ASN.1 BIT STRING as Constructed object, got: %s", subTag);
                         int i = stream.readLength();
@@ -109,7 +111,7 @@ public class ASN1BitString extends ASN1String<BitSet> {
 
         @Override
         public void serialize(final ASN1BitString asn1Object, final ASN1OutputStream stream) {
-
+            //TODO
         }
     }
 

@@ -62,11 +62,12 @@ public class ASN1OutputStream extends FilterOutputStream {
         }
     }
 
-    private int lengthBytes(int length) {
+    private int lengthBytes(final int length) {
+        int l = length;
         int nrBytes = 1;
-        while (length > 255) {
+        while (l > 255) {
             nrBytes++;
-            length >>= 8;
+            l >>= 8;
         }
         return nrBytes;
     }

@@ -85,7 +85,7 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
 
         @Override
         public void serialize(final ASN1TaggedObject asn1Object, final ASN1OutputStream stream) {
-
+            // TODO
         }
     }
 

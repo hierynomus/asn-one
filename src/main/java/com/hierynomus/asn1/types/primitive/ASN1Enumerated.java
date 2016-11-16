@@ -15,6 +15,8 @@
  */
 package com.hierynomus.asn1.types.primitive;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1ParseException;
@@ -44,9 +46,8 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public ASN1Enumerated parse(ASN1Tag<ASN1Enumerated> asn1Tag, byte[] value) throws ASN1ParseException {
-            ASN1Integer parse = new ASN1Integer.Parser(decoder).parse(ASN1Tag.INTEGER, value);
-            BigInteger value1 = (BigInteger) parse.getValue();
-            return new ASN1Enumerated(ASN1Tag.ENUMERATED, value1, value);
+            BigInteger enumValue = new BigInteger(value);
+            return new ASN1Enumerated(ASN1Tag.ENUMERATED, enumValue, value);
         }
     }
 
@@ -57,12 +58,22 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public int serializedLength(final ASN1Enumerated asn1Object) {
-            return 0;
+            if (asn1Object.valueBytes == null) {
+                calculateBytes(asn1Object);
+            }
+            return asn1Object.valueBytes.length;
         }
 
         @Override
-        public void serialize(final ASN1Enumerated asn1Object, final ASN1OutputStream stream) {
+        public void serialize(final ASN1Enumerated asn1Object, final ASN1OutputStream stream) throws IOException {
+            if (asn1Object.valueBytes == null) {
+                calculateBytes(asn1Object);
+            }
+            stream.write(asn1Object.valueBytes);
+        }
 
+        private void calculateBytes(final ASN1Enumerated asn1Object) {
+            asn1Object.valueBytes = asn1Object.value.toByteArray();
         }
     }
 

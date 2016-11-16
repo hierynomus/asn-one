@@ -94,7 +94,7 @@ public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Construc
                 stream.write(asn1Object.bytes);
             } else {
                 for (ASN1Object object : asn1Object) {
-                    stream.writeObject(asn1Object);
+                    stream.writeObject(object);
                 }
             }
         }
