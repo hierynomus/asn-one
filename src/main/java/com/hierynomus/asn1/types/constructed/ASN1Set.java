@@ -15,6 +15,7 @@
  */
 package com.hierynomus.asn1.types.constructed;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -76,16 +77,20 @@ public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Construc
         }
 
         @Override
-        public int serializedLength(final ASN1Set asn1Object) {
-            if (asn1Object.bytes != null) {
-                return asn1Object.bytes.length;
-            } else {
-                int length = 0;
-                for (ASN1Object object : asn1Object) {
-                    length += object.getTag().newSerializer(encoder).serializedLength(object);
-                }
-                return length;
+        public int serializedLength(final ASN1Set asn1Object) throws IOException {
+            if (null == asn1Object.bytes) {
+                calculateBytes(asn1Object);
             }
+            return asn1Object.bytes.length;
+        }
+
+        private void calculateBytes(final ASN1Set asn1Object) throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, out);
+            for (ASN1Object object : asn1Object) {
+                asn1OutputStream.writeObject(object);
+            }
+            asn1Object.bytes = out.toByteArray();
         }
 
         @Override

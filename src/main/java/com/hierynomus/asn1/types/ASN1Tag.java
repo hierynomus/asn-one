@@ -79,7 +79,7 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         }
         @Override
         public ASN1Serializer newSerializer(ASN1Encoder encoder) {
-            return null; // TODO
+            return new ASN1OctetString.Serializer(encoder);
         }
     };
     public static final ASN1Tag<ASN1Null> NULL = new ASN1Tag<ASN1Null>(Universal, 0x05, ASN1Encoding.Primitive) {
@@ -169,7 +169,18 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         this.asn1Encoding = asn1Encoding;
     }
 
+    public ASN1Tag<T> constructed() {
+        return asEncoded(ASN1Encoding.Constructed);
+    }
+
+    public ASN1Tag<T> primitive() {
+        return asEncoded(ASN1Encoding.Primitive);
+    }
+
     public ASN1Tag<T> asEncoded(final ASN1Encoding asn1Encoding) {
+        if (this.asn1Encoding == asn1Encoding) {
+            return this;
+        }
         if (!supportedEncodings.contains(asn1Encoding)) {
             throw new IllegalArgumentException(format("The ASN.1 tag %s does not support encoding as %s", this, asn1Encoding));
         }
@@ -180,10 +191,18 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             }
 
             @Override
-            public ASN1Serializer newSerializer(ASN1Encoder encoder) {
+            public ASN1Serializer<T> newSerializer(ASN1Encoder encoder) {
                 return ASN1Tag.this.newSerializer(encoder);
             }
         };
+    }
+
+    public static ASN1Tag application(int tag) {
+        return forTag(ASN1TagClass.Application, tag);
+    }
+
+    public static ASN1Tag contextSpecific(int tag) {
+        return forTag(ASN1TagClass.ContextSpecific, tag);
     }
 
     public static ASN1Tag forTag(ASN1TagClass asn1TagClass, int tag) {
@@ -201,12 +220,12 @@ public abstract class ASN1Tag<T extends ASN1Object> {
                 return new ASN1Tag(asn1TagClass, tag, of(ASN1Encoding.Primitive, ASN1Encoding.Constructed)) {
                     @Override
                     public ASN1Parser<?> newParser(ASN1Decoder decoder) {
-                        return new ASN1TaggedObject.Parser(decoder, this);
+                        return new ASN1TaggedObject.Parser(decoder);
                     }
 
                     @Override
                     public ASN1Serializer newSerializer(ASN1Encoder encoder) {
-                        return new ASN1TaggedObject.Serializer(encoder, this);
+                        return new ASN1TaggedObject.Serializer(encoder);
                     }
                 };
             default:

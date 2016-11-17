@@ -16,18 +16,25 @@
 package com.hierynomus.asn1.types.constructed
 
 import com.hierynomus.asn1.ASN1InputStream
+import com.hierynomus.asn1.ASN1OutputStream
 import com.hierynomus.asn1.ASN1ParseException
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder
+import com.hierynomus.asn1.encodingrules.der.DEREncoder
 import com.hierynomus.asn1.types.ASN1Tag
 import com.hierynomus.asn1.types.primitive.ASN1ObjectIdentifier
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static com.hierynomus.asn1.types.ASN1Tag.application
+import static com.hierynomus.asn1.types.ASN1Tag.contextSpecific
 import static com.hierynomus.asn1.types.ASN1TagClass.Application
 import static com.hierynomus.asn1.types.ASN1TagClass.ContextSpecific
 
 @Unroll
 class ASN1TaggedObjectSpec extends Specification {
+
+
+  public static final ASN1ObjectIdentifier SPNEGO_OID = new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
 
   def "should parse an explicit ASN.1 Tagged Object #tag"() {
     given:
@@ -40,8 +47,8 @@ class ASN1TaggedObjectSpec extends Specification {
 
     where:
     bytes                                                        | tag                                   | object
-    [0x60, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0)      | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
-    [0x81, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(ContextSpecific, 0x01) | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
+    [0x60, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0).constructed()      | SPNEGO_OID
+    [0xa1, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(ContextSpecific, 0x01).constructed() | SPNEGO_OID
   }
 
   def "should parse an implicit ASN.1 Tagged Object #tag"() {
@@ -55,8 +62,8 @@ class ASN1TaggedObjectSpec extends Specification {
 
     where:
     bytes                                            | tag                                   | object
-    [0x60, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0)      | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
-    [0x81, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(ContextSpecific, 0x01) | new ASN1ObjectIdentifier("1.3.6.1.5.5.2")
+    [0x40, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(Application, 0x0).primitive()      | SPNEGO_OID
+    [0x81, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02] | ASN1Tag.forTag(ContextSpecific, 0x01).primitive() | SPNEGO_OID
   }
 
   def "should not parse an implicit ASN.1 Tagged Object with as explicit"() {
@@ -69,5 +76,26 @@ class ASN1TaggedObjectSpec extends Specification {
 
     then:
     thrown(ASN1ParseException.class)
+  }
+
+  def "should write an ASN.1 #tagging Tagged Object (#tag)"() {
+    given:
+    def baos = new ByteArrayOutputStream()
+
+    when:
+    new ASN1OutputStream(new DEREncoder(), baos).writeObject(value)
+
+    then:
+    baos.toByteArray() == bytes as byte[]
+
+    where:
+    value | bytes
+    new ASN1TaggedObject(application(0x0).primitive(), SPNEGO_OID, false) | [0x40, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02]
+    new ASN1TaggedObject(application(0x0).constructed(), SPNEGO_OID) | [0x60, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02]
+    new ASN1TaggedObject(contextSpecific(0x01).primitive(), SPNEGO_OID, false) | [0x81, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02]
+    new ASN1TaggedObject(contextSpecific(0x01).constructed(), SPNEGO_OID) | [0xa1, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02]
+
+    tagging = value.explicit ? "explicit" : "implicit"
+    tag = value.tag
   }
 }

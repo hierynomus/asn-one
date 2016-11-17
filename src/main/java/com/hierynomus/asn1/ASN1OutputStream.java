@@ -73,6 +73,7 @@ public class ASN1OutputStream extends FilterOutputStream {
     }
 
     private void writeTag(final ASN1Tag tag) throws IOException {
-        write(tag.getTag());
+        byte tagByte = (byte) (tag.getAsn1TagClass().getValue() | tag.getAsn1Encoding().getValue() | tag.getTag());
+        write(tagByte);
     }
 }

@@ -13,20 +13,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1;
+package com.hierynomus.asn1.encodingrules.der;
 
-import java.io.IOException;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
-import com.hierynomus.asn1.types.ASN1Object;
 
-public abstract class ASN1Serializer<T extends ASN1Object> {
-    protected final ASN1Encoder encoder;
-
-    public ASN1Serializer(ASN1Encoder encoder) {
-        this.encoder = encoder;
-    }
-
-    public abstract int serializedLength(T asn1Object) throws IOException;
-
-    public abstract void serialize(T asn1Object, ASN1OutputStream stream) throws IOException;
+public class DEREncoder implements ASN1Encoder {
 }

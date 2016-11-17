@@ -36,4 +36,8 @@ public enum ASN1TagClass {
         }
         throw new IllegalStateException("Could not parse ASN.1 Tag Class (should be impossible)");
     }
+
+    public int getValue() {
+        return value;
+    }
 }

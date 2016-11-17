@@ -16,6 +16,7 @@
 package com.hierynomus.asn1.types.constructed;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -86,15 +87,20 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
         }
 
         @Override
-        public int serializedLength(final ASN1Sequence asn1Object) {
-            if (asn1Object.bytes != null) {
-                return asn1Object.bytes.length;
+        public int serializedLength(final ASN1Sequence asn1Object) throws IOException {
+            if (null == asn1Object.bytes) {
+                calculateBytes(asn1Object);
             }
-            int length = 0;
+            return asn1Object.bytes.length;
+        }
+
+        private void calculateBytes(final ASN1Sequence asn1Object) throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, out);
             for (ASN1Object object : asn1Object) {
-                length += object.getTag().newSerializer(encoder).serializedLength(object);
+                asn1OutputStream.writeObject(object);
             }
-            return length;
+            asn1Object.bytes = out.toByteArray();
         }
 
         @Override
