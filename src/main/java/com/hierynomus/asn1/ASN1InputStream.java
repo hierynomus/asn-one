@@ -49,7 +49,9 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
             byte[] value = decoder.readValue(length, this);
 
             //noinspection unchecked
-            return (T) tag.newParser(decoder).parse(tag, value);
+            ASN1Object parse = tag.newParser(decoder).parse(tag, value);
+            logger.debug("Read ASN.1 object: {}", parse);
+            return (T) parse;
         } catch (ASN1ParseException pe) {
             throw pe;
         } catch (Exception e) {

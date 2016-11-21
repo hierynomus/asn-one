@@ -32,14 +32,16 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
     private boolean explicit = true;
 
     public ASN1TaggedObject(ASN1Tag tag, ASN1Object object, boolean explicit) {
-        this(tag, object);
+        // If this is an explicitly tagged object, it should be constructed form
+        // Else we take the form of the implictly tagged object.
+        super(explicit ? tag.constructed() : tag.asEncoded(object.getTag().getAsn1Encoding()));
+        this.object = object;
         this.explicit = explicit;
+        this.bytes = null;
     }
 
     public ASN1TaggedObject(ASN1Tag tag, ASN1Object object) {
-        super(tag);
-        this.object = object;
-        bytes = null;
+        this(tag, object, true);
     }
 
     private ASN1TaggedObject(ASN1Tag tag, byte[] bytes, ASN1Decoder decoder) {
@@ -136,5 +138,19 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
             return tag.newParser(decoder).parse(tag, bytes);
         }
         throw new ASN1ParseException("Unable to parse the implicit Tagged Object with %s, it is explicit", tag);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append(this.getClass().getSimpleName());
+        b.append("[").append(tag);
+        if (object != null) {
+            b.append(",").append(object);
+        } else {
+            b.append(",<unknown>");
+        }
+        b.append("]");
+        return b.toString();
     }
 }
