@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import com.hierynomus.asn1.*;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.util.Checks;
 
@@ -29,7 +29,7 @@ public class ASN1BitString extends ASN1String<BitSet> {
 
     private int unusedBits;
 
-    private ASN1BitString(ASN1Tag<ASN1BitString> tag, byte[] bytes, int unusedBits) {
+    public ASN1BitString(ASN1Tag<ASN1BitString> tag, byte[] bytes, int unusedBits) {
         super(tag, bytes);
         this.unusedBits = unusedBits;
     }
@@ -61,42 +61,6 @@ public class ASN1BitString extends ASN1String<BitSet> {
     @Override
     public int length() {
         return (valueBytes.length * 8) - unusedBits;
-    }
-
-    public static class Parser extends ASN1Parser<ASN1BitString> {
-
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1BitString parse(ASN1Tag<ASN1BitString> asn1Tag, byte[] value) {
-            if (asn1Tag.isConstructed()) {
-                ASN1InputStream stream = new ASN1InputStream(decoder, value);
-                try {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    int unusedBits = 0;
-                    while (stream.available() > 0) {
-                        ASN1Tag subTag = stream.readTag();
-                        Checks.checkState(subTag.getTag() == asn1Tag.getTag(), "Expected an ASN.1 BIT STRING as Constructed object, got: %s", subTag);
-                        int i = stream.readLength();
-                        byte[] subValue = stream.readValue(i);
-                        baos.write(subValue, 1, subValue.length - 1);
-                        if (stream.available() <= 0) {
-                            // Last ASN.1 BitString
-                            unusedBits = subValue[0];
-                        }
-                    }
-                    return new ASN1BitString(asn1Tag, baos.toByteArray(), unusedBits);
-                } catch (IOException e) {
-                    throw new ASN1ParseException(e, "Unable to parse Constructed ASN.1 BIT STRING");
-                }
-            } else {
-                byte unusedBits = value[0];
-                byte[] bits = Arrays.copyOfRange(value, 1, value.length);
-                return new ASN1BitString(asn1Tag, bits, unusedBits);
-            }
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1BitString> {

@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import com.hierynomus.asn1.*;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
@@ -32,7 +32,7 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
     private final List<ASN1Object> objects;
     private byte[] bytes;
 
-    private ASN1Sequence(List<ASN1Object> objects, byte[] bytes) {
+    public ASN1Sequence(List<ASN1Object> objects, byte[] bytes) {
         super(ASN1Tag.SEQUENCE);
         this.objects = objects;
         this.bytes = bytes;
@@ -59,26 +59,6 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
 
     public ASN1Object get(int i) {
         return objects.get(i);
-    }
-
-    public static class Parser extends ASN1Parser<ASN1Sequence> {
-
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1Sequence parse(ASN1Tag<ASN1Sequence> asn1Tag, byte[] value) throws ASN1ParseException {
-            List<ASN1Object> list = new ArrayList<>();
-            try (ASN1InputStream stream = new ASN1InputStream(decoder, value)) {
-                for (ASN1Object asn1Object : stream) {
-                    list.add(asn1Object);
-                }
-            } catch (IOException e) {
-                throw new ASN1ParseException(e, "Unable to parse the ASN.1 SEQUENCE contents.");
-            }
-            return new ASN1Sequence(list, value);
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1Sequence> {

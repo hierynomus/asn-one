@@ -18,9 +18,9 @@ package com.hierynomus.asn1.types.primitive;
 import java.io.IOException;
 import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Decoder;
 import com.hierynomus.asn1.ASN1Serializer;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.util.Checks;
 
@@ -40,18 +40,6 @@ public class ASN1Null extends ASN1PrimitiveValue<Void> {
     @Override
     protected int valueHash() {
         return 0;
-    }
-
-    public static class Parser extends ASN1Parser<ASN1Null> {
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1Null parse(ASN1Tag<ASN1Null> asn1Tag, byte[] value) {
-            Checks.checkState(value.length == 0, "ASN.1 NULL can not have a value");
-            return new ASN1Null();
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1Null> {

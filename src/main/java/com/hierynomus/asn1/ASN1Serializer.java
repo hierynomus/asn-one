@@ -16,7 +16,6 @@
 package com.hierynomus.asn1;
 
 import java.io.IOException;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Object;
 
 public abstract class ASN1Serializer<T extends ASN1Object> {

@@ -21,8 +21,8 @@ import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.ASN1Serializer;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
@@ -37,7 +37,7 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
         this.value = value;
     }
 
-    private ASN1Enumerated(BigInteger value, byte[] valueBytes) {
+    public ASN1Enumerated(BigInteger value, byte[] valueBytes) {
         super(ASN1Tag.ENUMERATED, valueBytes);
         this.value = value;
     }
@@ -45,18 +45,6 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
     @Override
     public BigInteger getValue() {
         return value;
-    }
-
-    public static class Parser extends ASN1Parser<ASN1Enumerated> {
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1Enumerated parse(ASN1Tag<ASN1Enumerated> asn1Tag, byte[] value) throws ASN1ParseException {
-            BigInteger enumValue = new BigInteger(value);
-            return new ASN1Enumerated(enumValue, value);
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1Enumerated> {

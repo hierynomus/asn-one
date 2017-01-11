@@ -19,8 +19,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import com.hierynomus.asn1.*;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
@@ -44,7 +44,7 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         this(tag, object, true);
     }
 
-    private ASN1TaggedObject(ASN1Tag tag, byte[] bytes, ASN1Decoder decoder) {
+    public ASN1TaggedObject(ASN1Tag tag, byte[] bytes, ASN1Decoder decoder) {
         super(tag);
         this.bytes = bytes;
         this.decoder = decoder;
@@ -71,18 +71,6 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
     @Override
     public Iterator<ASN1Object> iterator() {
         return getObject(ASN1Tag.SEQUENCE).iterator();
-    }
-
-    public static class Parser extends ASN1Parser<ASN1TaggedObject> {
-
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1TaggedObject parse(ASN1Tag<ASN1TaggedObject> asn1Tag, byte[] value) {
-            return new ASN1TaggedObject(asn1Tag, value, decoder);
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1TaggedObject> {

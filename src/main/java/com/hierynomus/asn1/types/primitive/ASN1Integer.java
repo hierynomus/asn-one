@@ -19,9 +19,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Decoder;
 import com.hierynomus.asn1.ASN1Serializer;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
@@ -37,7 +37,7 @@ public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
         this.valueBytes = value.toByteArray();
     }
 
-    private ASN1Integer(byte[] valueBytes, BigInteger value) {
+    public ASN1Integer(byte[] valueBytes, BigInteger value) {
         super(ASN1Tag.INTEGER, valueBytes);
         this.value = value;
     }
@@ -50,17 +50,6 @@ public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
     @Override
     protected int valueHash() {
         return value.hashCode();
-    }
-
-    public static class Parser extends ASN1Parser<ASN1Integer> {
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1Integer parse(ASN1Tag<ASN1Integer> asn1Tag, byte[] value) {
-            return new ASN1Integer(value, new BigInteger(value));
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1Integer> {

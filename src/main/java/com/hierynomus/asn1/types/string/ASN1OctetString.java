@@ -19,8 +19,8 @@ import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.ASN1Serializer;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.io.IOException;
@@ -43,18 +43,6 @@ public class ASN1OctetString extends ASN1String<byte[]> {
     @Override
     public int length() {
         return valueBytes.length;
-    }
-
-    public static class Parser extends ASN1Parser<ASN1OctetString> {
-
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1OctetString parse(ASN1Tag<ASN1OctetString> asn1Tag, byte[] value) throws ASN1ParseException {
-            return new ASN1OctetString(asn1Tag, value);
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1OctetString> {

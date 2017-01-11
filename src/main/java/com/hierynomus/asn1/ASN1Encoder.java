@@ -13,17 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.hierynomus.asn1.encodingrules;
+package com.hierynomus.asn1;
 
-import com.hierynomus.asn1.types.ASN1Tag;
-
-import java.io.InputStream;
-
-public interface ASN1Decoder {
-
-    ASN1Tag<?> readTag(InputStream is);
-
-    int readLength(InputStream is);
-
-    byte[] readValue(int length, InputStream is);
+public interface ASN1Encoder {
 }

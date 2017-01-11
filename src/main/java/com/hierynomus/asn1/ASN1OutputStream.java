@@ -18,7 +18,6 @@ package com.hierynomus.asn1;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 

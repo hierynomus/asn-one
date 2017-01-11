@@ -23,8 +23,8 @@ import java.util.StringTokenizer;
 import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.ASN1Serializer;
-import com.hierynomus.asn1.encodingrules.ASN1Decoder;
-import com.hierynomus.asn1.encodingrules.ASN1Encoder;
+import com.hierynomus.asn1.ASN1Decoder;
+import com.hierynomus.asn1.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 import static com.hierynomus.asn1.util.Checks.checkArgument;
@@ -38,7 +38,7 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
         this.oid = oid;
     }
 
-    private ASN1ObjectIdentifier(byte[] valueBytes, String oid) {
+    public ASN1ObjectIdentifier(byte[] valueBytes, String oid) {
         super(ASN1Tag.OBJECT_IDENTIFIER, valueBytes);
         this.oid = oid;
     }
@@ -51,36 +51,6 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
     @Override
     protected int valueHash() {
         return oid.hashCode();
-    }
-
-    public static class Parser extends ASN1Parser<ASN1ObjectIdentifier> {
-        public Parser(ASN1Decoder decoder) {
-            super(decoder);
-        }
-
-        @Override
-        public ASN1ObjectIdentifier parse(ASN1Tag<ASN1ObjectIdentifier> asn1Tag, byte[] value) {
-            checkArgument(value.length > 0, "An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
-            ByteArrayInputStream is = new ByteArrayInputStream(value);
-            StringBuilder b = new StringBuilder();
-            int firstTwo = is.read();
-            b.append(firstTwo / 40);
-            b.append('.').append(firstTwo % 40);
-            while (is.available() > 0) {
-                int x = is.read();
-                if (x < 127) {
-                    b.append('.').append(x);
-                } else {
-                    BigInteger v = BigInteger.valueOf(x & 0x7f);
-                    do {
-                        x = is.read();
-                        v = v.shiftLeft(7).add(BigInteger.valueOf(x & 0x7f));
-                    } while (x > 127);
-                    b.append('.').append(v);
-                }
-            }
-            return new ASN1ObjectIdentifier(value, b.toString());
-        }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1ObjectIdentifier> {
