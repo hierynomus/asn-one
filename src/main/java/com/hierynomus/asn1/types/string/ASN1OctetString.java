@@ -41,6 +41,11 @@ public class ASN1OctetString extends ASN1String<byte[]> {
     }
 
     @Override
+    protected String valueString() {
+        return Arrays.toString(valueBytes);
+    }
+
+    @Override
     public int length() {
         return valueBytes.length;
     }

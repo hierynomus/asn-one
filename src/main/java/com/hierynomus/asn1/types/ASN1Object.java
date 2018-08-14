@@ -46,8 +46,10 @@ public abstract class ASN1Object<T> {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + "[" + getValue() + "]";
+        return this.getClass().getSimpleName() + "[" + valueString() + "]";
     }
+
+    protected String valueString() { return this.getValue() != null ? this.getValue().toString() : null; }
 
     public ASN1Tag getTag() {
         return tag;

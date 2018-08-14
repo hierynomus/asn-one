@@ -25,22 +25,77 @@ import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.util.Checks;
 
-public class ASN1BitString extends ASN1String<BitSet> {
+public class ASN1BitString extends ASN1String<boolean[]> {
 
     private int unusedBits;
+    private boolean[] bits;
 
     private ASN1BitString(ASN1Tag<ASN1BitString> tag, byte[] bytes, int unusedBits) {
         super(tag, bytes);
         this.unusedBits = unusedBits;
+        this.bits = constructBits();
     }
 
+    public ASN1BitString(byte[] bytes, int unusedBits) {
+        this(ASN1Tag.BIT_STRING, bytes, unusedBits);
+    }
+
+    public ASN1BitString(boolean[] bits) {
+        super(ASN1Tag.BIT_STRING, constructBytes(bits));
+        this.bits = bits;
+        this.unusedBits = 8 - (bits.length % 8);
+    }
+
+    /**
+     * Constructor for ASN.1 BIT STRING.
+     *
+     * The passed in BitSet will be treated as having no unused bits.
+     * @param bitSet
+     */
     public ASN1BitString(BitSet bitSet) {
-        super(ASN1Tag.BIT_STRING, bitSet.toByteArray());
+        this(ASN1Tag.BIT_STRING, constructBytes(bitSet), 0);
+    }
+
+    private static byte[] constructBytes(boolean[] bits) {
+        byte[] bytes = new byte[bits.length / 8 + (bits.length % 8 > 0 ? 1 : 0)];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = 0;
+            for (int j = 0; j < 8; j++) {
+                boolean v = i * 8 + j < bits.length && bits[i * 8 + j];
+                bytes[i] += ((v ? 1 : 0) << (8 - j - 1));
+            }
+        }
+        return bytes;
+    }
+
+    private static byte[] constructBytes(BitSet bitSet) {
+        byte[] bytes = new byte[bitSet.length() / 8 + 1];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = 0;
+            for (int j = 0; j < 8; j++) {
+                bytes[i] += ((bitSet.get(i * 8 + j) ? 1 : 0) << (8 - j - 1));
+            }
+        }
+        return bytes;
+    }
+
+    private boolean[] constructBits() {
+        boolean[] bits = new boolean[length()];
+        for (int i = 0; i < bits.length; i++) {
+            bits[i] = isSet(i);
+
+        }
+        return bits;
     }
 
     @Override
-    public BitSet getValue() {
-        return BitSet.valueOf(valueBytes);
+    public boolean[] getValue() {
+        return Arrays.copyOf(this.bits, this.bits.length);
+    }
+
+    @Override
+    protected String valueString() {
+        return Arrays.toString(bits);
     }
 
     /**
@@ -106,12 +161,13 @@ public class ASN1BitString extends ASN1String<BitSet> {
 
         @Override
         public int serializedLength(final ASN1BitString asn1Object) {
-            return 0;
+            return asn1Object.valueBytes.length + 1;
         }
 
         @Override
-        public void serialize(final ASN1BitString asn1Object, final ASN1OutputStream stream) {
-            //TODO
+        public void serialize(final ASN1BitString asn1Object, final ASN1OutputStream stream) throws IOException {
+            stream.write(asn1Object.unusedBits);
+            stream.write(asn1Object.valueBytes);
         }
     }
 

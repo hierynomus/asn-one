@@ -16,11 +16,17 @@
 package com.hierynomus.asn1
 
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder
+import com.hierynomus.asn1.encodingrules.der.DEREncoder
+import com.hierynomus.asn1.types.constructed.ASN1SetSpec
+import com.hierynomus.asn1.types.constructed.ASN1TaggedObjectSpec
 import com.hierynomus.asn1.types.primitive.ASN1ObjectIdentifier
 import com.hierynomus.asn1.types.constructed.ASN1Sequence
 import com.hierynomus.asn1.types.ASN1Tag
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObject
+import com.hierynomus.asn1.types.string.ASN1BitString
 import spock.lang.Specification
+
+import javax.xml.bind.DatatypeConverter
 
 class IntegrationSpec extends Specification {
 
@@ -41,5 +47,21 @@ class IntegrationSpec extends Specification {
     seq3.size() == 2
     seq3.get(0) == new ASN1ObjectIdentifier("1.3.6.1.4.1.311.2.2.30")
     seq3.get(1) == new ASN1ObjectIdentifier("1.3.6.1.4.1.311.2.2.10")
+  }
+
+  def "should construct a NegTokenInit (NTLM)"() {
+    given:
+    def contextFlags = new ASN1BitString(BitSet.valueOf([0x03] as byte[]))
+    def mechListMic = new ASN1Sequence([new ASN1ObjectIdentifier("1.3.6.1.4.1.311.2.2.30"), new ASN1ObjectIdentifier("1.3.6.1.4.1.311.2.2.10")])
+    def negTokenInit = new ASN1Sequence([new ASN1TaggedObject(ASN1Tag.contextSpecific(0).constructed(), mechListMic), new ASN1TaggedObject(ASN1Tag.contextSpecific(1).constructed(), contextFlags)])
+    def implictSeq = new ASN1Sequence([new ASN1ObjectIdentifier("1.3.6.1.5.5.2"), new ASN1TaggedObject(ASN1Tag.contextSpecific(0).constructed(), negTokenInit)])
+    def gssApi = new ASN1TaggedObject(ASN1Tag.application(0).constructed(), implictSeq, false)
+    def stream = new ByteArrayOutputStream()
+
+    when:
+    new ASN1OutputStream(new DEREncoder(), stream).writeObject(gssApi)
+
+    then:
+    println(DatatypeConverter.printHexBinary(stream.toByteArray()))
   }
 }
