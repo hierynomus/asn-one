@@ -134,7 +134,7 @@ class ASN1BitStringSpec extends Specification {
     def object = is.readObject()
 
     then:
-    object.getTag().getAsn1Encoding() == ASN1Encoding.Constructed
+    object.getTag().getAsn1Encoding() == ASN1Encoding.CONSTRUCTED
     (object as ASN1BitString).length() == 22
   }
 

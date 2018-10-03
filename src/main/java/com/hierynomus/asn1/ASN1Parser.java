@@ -26,5 +26,5 @@ public abstract class ASN1Parser<T extends ASN1Object> {
         this.decoder = decoder;
     }
 
-    public abstract T parse(ASN1Tag<T> asn1Tag, byte[] value) throws ASN1ParseException;
+    public abstract T parse(ASN1Tag<T> asn1Tag, byte[] value);
 }

@@ -16,8 +16,8 @@
 package com.hierynomus.asn1.types;
 
 public enum ASN1Encoding {
-    Primitive(0x0),
-    Constructed(0x20);
+    PRIMITIVE(0x0),
+    CONSTRUCTED(0x20);
 
     private int value;
 
@@ -31,9 +31,9 @@ public enum ASN1Encoding {
 
     public static ASN1Encoding parseEncoding(byte tagByte) {
         if ((tagByte & 0x20) == 0) {
-            return Primitive;
+            return PRIMITIVE;
         } else {
-            return Constructed;
+            return CONSTRUCTED;
         }
     }
 }

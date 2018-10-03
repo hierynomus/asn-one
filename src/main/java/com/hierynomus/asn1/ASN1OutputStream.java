@@ -76,4 +76,9 @@ public class ASN1OutputStream extends FilterOutputStream {
         byte tagByte = (byte) (tag.getAsn1TagClass().getValue() | tag.getAsn1Encoding().getValue() | tag.getTag());
         write(tagByte);
     }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        out.write(b, off, len);
+    }
 }

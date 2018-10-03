@@ -15,13 +15,14 @@
  */
 package com.hierynomus.asn1.encodingrules;
 
+import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
 import java.io.InputStream;
 
 public interface ASN1Decoder {
 
-    ASN1Tag<?> readTag(InputStream is);
+    ASN1Tag<? extends ASN1Object> readTag(InputStream is);
 
     int readLength(InputStream is);
 

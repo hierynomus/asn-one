@@ -16,10 +16,10 @@
 package com.hierynomus.asn1.types;
 
 public enum ASN1TagClass {
-    Universal(0),
-    Application(0x40),
-    ContextSpecific(0x80),
-    Private(0xc0);
+    UNIVERSAL(0),
+    APPLICATION(0x40),
+    CONTEXT_SPECIFIC(0x80),
+    PRIVATE(0xc0);
 
     private int value;
 

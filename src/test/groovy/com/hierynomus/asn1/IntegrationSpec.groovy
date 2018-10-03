@@ -16,6 +16,7 @@
 package com.hierynomus.asn1
 
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder
+import com.hierynomus.asn1.encodingrules.der.DERDecoder
 import com.hierynomus.asn1.encodingrules.der.DEREncoder
 import com.hierynomus.asn1.types.constructed.ASN1SetSpec
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObjectSpec

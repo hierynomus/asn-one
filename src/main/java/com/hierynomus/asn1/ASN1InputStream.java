@@ -20,6 +20,8 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
@@ -40,7 +42,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         this.decoder = decoder;
     }
 
-    public <T extends ASN1Object> T readObject() throws ASN1ParseException {
+    public <T extends ASN1Object> T readObject() {
         try {
             ASN1Tag tag = decoder.readTag(this);
             logger.trace("Read ASN.1 tag {}", tag);
@@ -59,7 +61,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         }
     }
 
-    public byte[] readValue(int length) throws IOException {
+    public byte[] readValue(int length) {
         return decoder.readValue(length, this);
     }
 
@@ -77,7 +79,11 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
 
             @Override
             public ASN1Object next() {
-                return readObject();
+                try {
+                    return readObject();
+                } catch (Exception e) {
+                    throw new NoSuchElementException(e.getMessage());
+                }
             }
 
             @Override
@@ -87,11 +93,11 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         };
     }
 
-    public ASN1Tag readTag() throws IOException {
+    public ASN1Tag readTag() {
         return decoder.readTag(this);
     }
 
-    public int readLength() throws IOException {
+    public int readLength() {
         return decoder.readLength(this);
     }
 }

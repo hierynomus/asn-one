@@ -33,7 +33,7 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
 
     @Override
     public Iterator<ASN1Object> iterator() {
-        if (tag.getAsn1Encoding() == ASN1Encoding.Constructed) {
+        if (tag.getAsn1Encoding() == ASN1Encoding.CONSTRUCTED) {
             return ASN1Tag.SEQUENCE.newParser(new BERDecoder()).parse(ASN1Tag.SEQUENCE, valueBytes).iterator();
         } else {
             return Collections.<ASN1Object>singletonList(this).iterator();

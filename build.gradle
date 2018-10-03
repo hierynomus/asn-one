@@ -3,12 +3,15 @@ import java.text.SimpleDateFormat
 plugins {
   id "java"
   id "groovy"
+  id "jacoco"
+  id "jdepend"
   id "maven-publish"
-  id "org.ajoberstar.release-opinion" version "1.4.2"
+  id 'pl.allegro.tech.build.axion-release' version '1.9.2'
   id "com.github.hierynomus.license" version "0.12.1"
   id "com.jfrog.bintray" version "1.7"
-  id 'ru.vyarus.pom' version '1.0.3'
-  id 'ru.vyarus.github-info' version '1.1.0'
+  id 'ru.vyarus.java-lib' version '1.0.5'
+  id 'ru.vyarus.animalsniffer' version '1.4.2'
+  id 'org.sonarqube' version "2.6"
 }
 
 repositories {
@@ -16,6 +19,11 @@ repositories {
 }
 
 group = "com.hierynomus.asn-one"
+defaultTasks = ["build"]
+
+ext {
+  bintrayLabels = ["asn1", "ASN.1", "serialization", "parser"]
+}
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -23,6 +31,8 @@ targetCompatibility = 1.7
 configurations.compile.transitive = false
 
 dependencies {
+  signature 'org.codehaus.mojo.signature:java17:1.0@signature'
+
   compile "org.slf4j:slf4j-api:1.7.13"
   testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
   testCompile 'commons-io:commons-io:2.5'
@@ -38,8 +48,15 @@ license {
   strictCheck true
 }
 
-release {
-  grgit = org.ajoberstar.grgit.Grgit.open(project.projectDir)
+scmVersion {
+  tag {
+    prefix = 'v'
+    versionSeparator = ''
+  }
+  hooks {
+    pre 'fileUpdate', [file: 'README.adoc', pattern: { v, c -> /:asn_version: .*/}, replacement: { v, c -> ":asn_version: $v" }]
+    pre 'commit'
+  }
 }
 
 // This disables the pedantic doclint feature of JDK8
@@ -47,16 +64,6 @@ if (JavaVersion.current().isJava8Compatible()) {
   tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet')
   }
-}
-
-task sourcesJar(type: Jar) {
-  from sourceSets.main.allSource
-  classifier = 'sources'
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-  classifier = 'javadoc'
-  from javadoc.destinationDir
 }
 
 tasks.withType(Test) {
@@ -73,14 +80,26 @@ tasks.withType(Test) {
 
 project.tasks.compileGroovy.onlyIf { false }
 
-github {
-  user 'hierynomus'
-  license 'Apache'
-}
-
 pom {
   description 'ASN.1 serialization and parsing library'
-  url 'https://github.com/hierynomus/asn-one'
+  url "https://gitlab.com/hierynomus/${project.name}"
+
+  licenses {
+    license {
+      name "Apache License 2.0"
+      url "https://opensource.org/licenses/Apache-2.0"
+      distribution "repo"
+    }
+  }
+  scm {
+    url "https://gitlab.com/hierynomus/${project.name}"
+    connection "scm:git@gitlab.com:hierynomus/${project.name}.git"
+    developerConnection "scm:git@gitlab.com:hierynomus/${project.name}.git"
+  }
+  issueManagement {
+    system 'GitLab'
+    url "https://gitlab.com/hierynomus/${project.name}/issues"
+  }
   developers {
     developer {
       id "hierynomus"
@@ -93,29 +112,21 @@ pom {
   }
 }
 
-publishing {
-  publications {
-    AsnOne(MavenPublication) {
-      from components.java
-      artifact sourcesJar
-      artifact javadocJar
-    }
-  }
-}
-
 if (project.hasProperty("bintrayUsername") && project.hasProperty("bintrayApiKey")) {
   bintray {
     user = project.property("bintrayUsername")
     key = project.property("bintrayApiKey")
     publish = true
-    publications = ["AsnOne"]
+    publications = ["maven"]
     pkg {
       repo = "maven"
       name = project.name
       licenses = ["Apache-2.0"]
-      vcsUrl = "https://github.com/hierynomus/asn-one.git"
-      labels = ["asn1", "ASN.1", "serialization", "parser"]
-      githubRepo = "hierynomus/asn-one"
+      vcsUrl = "https://gitlab.com/hierynomus/${project.name}.git"
+      websiteUrl = "https://gitlab.com/hierynomus/${project.name}"
+      issueTrackerUrl = "https://gitlab.com/hierynomus/${project.name}/issues"
+      labels = project.ext.bintrayLabels
+      githubRepo = "hierynomus/${project.name}"
       version {
         name = project.version.toString()
         vcsTag = "v${project.version}"
@@ -135,4 +146,57 @@ if (project.hasProperty("bintrayUsername") && project.hasProperty("bintrayApiKey
   }
 }
 
-project.tasks.release.dependsOn(project.tasks.bintrayUpload)
+jdepend {
+  toolVersion = "2.9.1"
+  sourceSets = [sourceSets.main]
+  ignoreFailures = true
+}
+
+jdependMain {
+  reports {
+    xml.enabled true
+    text.enabled false
+  }
+}
+
+task jdependReport(dependsOn: jdependMain, group: 'verification', description: 'Generates a HTML report after executing jdepend checks.')
+jdependReport.doLast {
+  ant.xslt(
+    in: "$reporting.baseDir/jdepend/main.xml",
+    style: "$rootDir/conf/jdepend/jdepend-report.xslt",
+    out: "$reporting.baseDir/jdepend/main.html")
+}
+
+check {
+  dependsOn += ['jdependReport']
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+}
+
+sonarqube {
+  properties {
+    property "sonar.host.url", "https://sonarcloud.io"
+    property "sonar.organization", "hierynomus-github"
+    property "sonar.projectKey", "com.hierynomus:asn-one"
+    property "sonar.login", project.property('sonar.login')
+  }
+}
+
+
+project.tasks.release.finalizedBy(project.tasks.bintrayUpload)
+
+task forkedUploadRelease(type: GradleBuild) {
+  buildFile = project.buildFile
+  tasks = ["bintrayUpload"]
+}
+
+project.tasks.release.dependsOn([project.tasks.build])
+project.tasks.release.finalizedBy(project.tasks.forkedUploadRelease)
+
+project.tasks.jacocoTestReport.dependsOn(project.tasks.test)
+project.tasks.check.dependsOn(project.tasks.jacocoTestReport)

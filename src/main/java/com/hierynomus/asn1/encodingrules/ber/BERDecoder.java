@@ -15,18 +15,20 @@
  */
 package com.hierynomus.asn1.encodingrules.ber;
 
-import java.io.IOException;
-import java.io.InputStream;
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Encoding;
+import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.types.ASN1TagClass;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class BERDecoder implements ASN1Decoder {
 
     @Override
-    public ASN1Tag<?> readTag(InputStream is) {
+    public ASN1Tag<? extends ASN1Object> readTag(InputStream is) {
         try {
             int tagByte = is.read();
             ASN1TagClass asn1TagClass = ASN1TagClass.parseClass((byte) tagByte);

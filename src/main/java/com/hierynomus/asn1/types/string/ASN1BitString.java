@@ -127,8 +127,7 @@ public class ASN1BitString extends ASN1String<boolean[]> {
         @Override
         public ASN1BitString parse(ASN1Tag<ASN1BitString> asn1Tag, byte[] value) {
             if (asn1Tag.isConstructed()) {
-                ASN1InputStream stream = new ASN1InputStream(decoder, value);
-                try {
+                try (ASN1InputStream stream = new ASN1InputStream(decoder, value)) {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     int unusedBits = 0;
                     while (stream.available() > 0) {

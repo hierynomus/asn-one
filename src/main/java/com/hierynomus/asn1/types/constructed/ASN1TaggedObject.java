@@ -102,13 +102,14 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         private void calculateBytes(final ASN1TaggedObject asn1Object) throws IOException {
             ASN1Object object = asn1Object.object;
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, baos);
-            if (asn1Object.explicit) {
-                asn1OutputStream.writeObject(object);
-            } else {
-                object.getTag().newSerializer(encoder).serialize(object, asn1OutputStream);
+            try (ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, baos)) {
+                if (asn1Object.explicit) {
+                    asn1OutputStream.writeObject(object);
+                } else {
+                    object.getTag().newSerializer(encoder).serialize(object, asn1OutputStream);
+                }
+                asn1Object.bytes = baos.toByteArray();
             }
-            asn1Object.bytes = baos.toByteArray();
         }
 
         @Override
@@ -124,10 +125,12 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         if (object != null) {
             return object;
         }
-        try {
-            return new ASN1InputStream(decoder, bytes).readObject();
+        try (ASN1InputStream inputStream = new ASN1InputStream(decoder, bytes)) {
+            return inputStream.readObject();
         } catch (ASN1ParseException e) {
             throw new ASN1ParseException(e, "Unable to parse the explicit Tagged Object with %s, it might be implicit", tag);
+        } catch (IOException e) {
+            throw new ASN1ParseException(e, "Could not parse the inputstream");
         }
     }
 
