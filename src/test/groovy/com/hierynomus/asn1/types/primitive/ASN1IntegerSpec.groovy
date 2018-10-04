@@ -60,7 +60,7 @@ class ASN1IntegerSpec extends Specification {
     then:
     def ex = thrown(ASN1ParseException.class)
     def wrapped = ex.getCause()
-    wrapped.message ==~ "The ASN.1 tag .* does not support encoding as Constructed"
+    wrapped.message ==~ "The ASN.1 tag .* does not support encoding as CONSTRUCTED"
   }
 
   @Unroll
