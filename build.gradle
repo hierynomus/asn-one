@@ -59,6 +59,8 @@ scmVersion {
   }
 }
 
+project.version = scmVersion.version
+
 // This disables the pedantic doclint feature of JDK8
 if (JavaVersion.current().isJava8Compatible()) {
   tasks.withType(Javadoc) {
