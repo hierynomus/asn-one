@@ -55,6 +55,7 @@ scmVersion {
   }
   hooks {
     pre 'fileUpdate', [file: 'README.adoc', pattern: { v, c -> /:asn_version: .*/}, replacement: { v, c -> ":asn_version: $v" }]
+    
     pre 'commit'
   }
 }
@@ -190,11 +191,9 @@ sonarqube {
 }
 
 
-project.tasks.release.finalizedBy(project.tasks.bintrayUpload)
-
 task forkedUploadRelease(type: GradleBuild) {
   buildFile = project.buildFile
-  tasks = ["bintrayUpload"]
+  tasks = ["clean","bintrayUpload"]
 }
 
 project.tasks.release.dependsOn([project.tasks.build])
