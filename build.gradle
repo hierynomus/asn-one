@@ -183,7 +183,7 @@ sonarqube {
     property "sonar.host.url", "https://sonarcloud.io"
     property "sonar.organization", "hierynomus-github"
     property "sonar.projectKey", "com.hierynomus:asn-one"
-    #property "sonar.login", project.property('sonar.login')
+    //property "sonar.login", project.property('sonar.login')
   }
 }
 
