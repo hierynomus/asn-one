@@ -37,6 +37,11 @@ check:
   script:
     - ./gradlew check
 
+sonarqube:
+  stage: qa
+  script:
+    - ./gradlew sonarqube -Dsonar.login=${SONAR_TOKEN}
+
 # deploy:
 #   stage: deploy
 #   script:
