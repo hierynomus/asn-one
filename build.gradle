@@ -131,7 +131,7 @@ if (project.hasProperty("bintrayUsername") && project.hasProperty("bintrayApiKey
       labels = project.ext.bintrayLabels
       githubRepo = "hierynomus/${project.name}"
       version {
-        name = project.version.toString()
+        name = "${project.version}"
         vcsTag = "v${project.version}"
         released = new SimpleDateFormat('yyyy-MM-dd\'T\'HH:mm:ss.SSSZZ').format(new Date())
         gpg {
