@@ -193,7 +193,7 @@ sonarqube {
 
 task forkedUploadRelease(type: GradleBuild) {
   buildFile = project.buildFile
-  tasks = ["clean","bintrayUpload"]
+  tasks = ["clean","currentVersion","bintrayUpload"]
 }
 
 project.tasks.release.dependsOn([project.tasks.build])
