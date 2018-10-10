@@ -18,7 +18,7 @@ repositories {
   mavenCentral()
 }
 
-group = "com.hierynomus.asn-one"
+group = "com.hierynomus"
 defaultTasks = ["build"]
 
 ext {
