@@ -36,6 +36,10 @@ If your project is built using another build tool that uses the Maven Central re
 . Run the command `./gradlew clean build`.
 
 == Release History
-
+v0.4.0 (2018-10-11)::
+- Moved groupID to 'com.hierynomus' to be in line with other libraries
+v0.3.0 (2018-10-10)::
+- Implemented serialization and deserialization in streams
+v0.2.0 (unreleased)::
 v0.1.0 (2016-11-25)::
 - Initial release, containing most standard types
