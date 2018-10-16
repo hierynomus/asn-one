@@ -1,7 +1,7 @@
 = asn-one - ASN.1 library for Java
 Jeroen van Erp
 :asn_groupid: com.hierynomus
-:asn_version: 0.3.0
+:asn_version: 0.4.0
 :source-highlighter: pygments
 
 image:https://api.bintray.com/packages/hierynomus/maven/asn-ons/images/download.svg[link="https://bintray.com/hierynomus/maven/asn-one/_latestVersion"] image:https://travis-ci.org/hierynomus/asn-one.svg?branch=master["Build Status", link="https://travis-ci.org/hierynomus/asn-one"] image:https://api.codacy.com/project/badge/Grade/f7eb9b6b372b4ce4a0fac2af65acaaed["Codacy code quality", link="https://www.codacy.com/app/jeroen_2/asn-one?utm_source=github.com&utm_medium=referral&utm_content=hierynomus/asn-one&utm_campaign=Badge_Grade"] image:https://javadoc-emblem.rhcloud.com/doc/com.hierynomus/asn-one/badge.svg["Javadoc",link="http://www.javadoc.io/doc/com.hierynomus/asn-one"] image:https://maven-badges.herokuapp.com/maven-central/com.hierynomus/asn-one/badge.svg["Maven Central",link="https://maven-badges.herokuapp.com/maven-central/com.hierynomus/asn-one"]
