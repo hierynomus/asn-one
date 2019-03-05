@@ -15,6 +15,7 @@
  */
 package com.hierynomus.asn1.types.string;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
@@ -38,6 +39,10 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
         } else {
             return Collections.<ASN1Object>singletonList(this).iterator();
         }
+    }
+
+    public byte[] getValueBytes() {
+        return Arrays.copyOf(valueBytes, valueBytes.length);
     }
 
     public abstract int length();

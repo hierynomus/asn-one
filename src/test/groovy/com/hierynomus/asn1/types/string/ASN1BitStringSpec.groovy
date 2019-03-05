@@ -52,10 +52,12 @@ class ASN1BitStringSpec extends Specification {
 
     expect:
     object instanceof ASN1BitString
+    ((ASN1BitString) object).getValueBytes() == bytes[3..-1] as byte[]
 
     with(object as ASN1BitString) { ASN1BitString bs ->
       def bitString2 = new ASN1BitString(bs.getValue())
       bitString2.length() == length
+      bitString2.getValueBytes() == bs.getValueBytes()
       (0..length - 1).every {
         bs.isSet(it) == bitString2.isSet(it)
       }
@@ -66,22 +68,6 @@ class ASN1BitStringSpec extends Specification {
     [0x03, 0x04, 0x02, 0xF0, 0xF0, 0xF4] | 22     | [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1]
     [0x03, 0x04, 0x06, 0x6E, 0x5D, 0xC0] | 18     | [0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1]
   }
-//
-//  def "should construct ASN.1 BIT STRING correctly from boolean[]"() {
-//    given:
-//    def bits = bitValues.collect { b -> b == 1 } as boolean[]
-//    def bitString = new ASN1BitString(bits)
-//    print(bitString)
-//
-//    expect:
-//    bitValues.eachWithIndex { int entry, int idx ->
-//      bitString.isSet(idx) == (entry == 1)
-//    }
-//
-//    where:
-//    bitValues << [[1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1],
-//    [0,1,1,0,1,1,1,0,0,1,0,1,1,1,0,1,1,1]]
-//  }
 
   @Unroll
   def "should construct ASN.1 BIT STRING correctly from #sourceType with length #valueLength"() {
