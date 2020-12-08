@@ -55,7 +55,7 @@ public class BERDecoder implements ASN1Decoder {
     public int readLength(InputStream is) {
         try {
             int firstByte = is.read();
-            if (firstByte < 0x7f) {
+            if (firstByte <= 0x7f) {
                 return firstByte;
             }
             int nrBytes = firstByte & 0x7f;
