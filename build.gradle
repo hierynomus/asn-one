@@ -20,7 +20,7 @@ group = "com.hierynomus"
 defaultTasks = ["build"]
 
 ext {
-  moduleName = "${project.group}.${project.name}"
+  moduleName = "${project.group}.${project.name.replaceAll("-", "")}"
   bintrayLabels = ["asn1", "ASN.1", "serialization", "parser"]
 }
 
