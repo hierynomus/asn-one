@@ -65,4 +65,31 @@ class IntegrationSpec extends Specification {
     then:
     println(DatatypeConverter.printHexBinary(stream.toByteArray()))
   }
+
+
+  def "Should correctly parse higher number tagged values"() {
+    given:
+    def b64 = "MIGwoQgxBgIBAgIBA6IDAgEBowQCAggApQUxAwIBBKYIMQYCAQMCAQW/gUgFAgMBAAG/g3cCBQC/hT4DAgEAv4VATDBKBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAAoBAgQgco2xJ08fHPFXHeQ4CwSKVUrEo4Dnb1NVCDUpCEqTeAG/hUEDAgEAv4VCBQIDAxSzv4VOBgIEATQV8b+FTwYCBAE0Few="
+
+    when:
+    def is = new ASN1InputStream(new BERDecoder(), b64.decodeBase64() as byte[])
+
+    then:
+    ASN1Sequence s = is.readObject()
+    s.size() == 13
+    s.get(0).tag.tag == 1
+    s.get(1).tag.tag == 2
+    s.get(2).tag.tag == 3
+    s.get(3).tag.tag == 5
+    s.get(4).tag.tag == 6
+    s.get(5).tag.tag == 200
+    s.get(6).tag.tag == 503
+    s.get(7).tag.tag == 702
+    s.get(8).tag.tag == 704
+    s.get(9).tag.tag == 705
+    s.get(10).tag.tag == 706
+    s.get(11).tag.tag == 718
+    s.get(12).tag.tag == 719
+
+  }
 }

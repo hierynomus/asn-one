@@ -34,16 +34,28 @@ public class BERDecoder implements ASN1Decoder {
             ASN1TagClass asn1TagClass = ASN1TagClass.parseClass((byte) tagByte);
             ASN1Encoding asn1Encoding = ASN1Encoding.parseEncoding((byte) tagByte);
             int tag = tagByte & 0x1f;
+
             if (tag <= 0x1e) {
                 return ASN1Tag.forTag(asn1TagClass, tag).asEncoded(asn1Encoding);
             } else {
                 int iTag = 0;
                 int read = is.read();
-                do {
-                    iTag <<= 7;
+                if ((read & 0x7f) == 0) {
+                    throw new ASN1ParseException("corrupted stream - invalid high tag number found");
+                }
+
+                while ((read >= 0) && ((read & 0x80) != 0)) {
                     iTag |= (read & 0x7f);
+                    iTag <<= 7;
                     read = is.read();
-                } while ((read & 0x80) > 0);
+                }
+
+                if (read < 0) {
+                    throw new ASN1ParseException("EOF found inside tag value.");
+                }
+
+                iTag |= (read & 0x7f);
+
                 return ASN1Tag.forTag(asn1TagClass, iTag).asEncoded(asn1Encoding);
             }
         } catch (IOException ioe) {
