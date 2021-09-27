@@ -36,6 +36,9 @@ If your project is built using another build tool that uses the Maven Central re
 . Run the command `./gradlew clean build`.
 
 == Release History
+v0.6.0 (2021-09-27)::
+- Fix Java module name
+- Fix bug in parsing Tag numbers
 v0.4.0 (2018-10-11)::
 - Moved groupID to 'com.hierynomus' to be in line with other libraries
 v0.3.0 (2018-10-10)::

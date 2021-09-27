@@ -111,10 +111,8 @@ publishing {
 project.signing {
   required { project.gradle.taskGraph.hasTask("release") }
 	sign publishing.publications.maven
-}
 
-if (project.hasProperty("signingKeyId") || project.hasProperty("signingKey")) {
-	project.signing {
+  if (project.hasProperty("signingKeyId") || project.hasProperty("signingKey")) {
 		def signingKeyId = project.findProperty("signingKeyId")
 		def signingKey = project.findProperty("signingKey")
 		def signingPassword = project.findProperty("signingPassword")
@@ -123,7 +121,6 @@ if (project.hasProperty("signingKeyId") || project.hasProperty("signingKey")) {
 		} else if (signingKey) {
 			useInMemoryPgpKeys(signingKey, signingPassword)
 		}
-		sign publishing.publications.maven
 	}
 }
 
@@ -174,7 +171,7 @@ jacocoTestReport {
 
 task forkedUploadRelease(type: GradleBuild) {
   buildFile = project.buildFile
-  tasks = ["clean","currentVersion","publishToSonatype"]
+  tasks = ["clean","currentVersion","publishToSonatype", "closeAndReleaseSonatypeStagingRepository"]
 }
 
 project.tasks.release.dependsOn([project.tasks.build])
