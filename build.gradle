@@ -5,11 +5,12 @@ plugins {
   id "groovy"
   id "jacoco"
   id "maven-publish"
-  id 'pl.allegro.tech.build.axion-release' version '1.11.0'
-  id "com.github.hierynomus.license" version "0.15.0"
-  id "com.jfrog.bintray" version "1.8.5"
-  id 'ru.vyarus.java-lib' version '1.1.2'
-  id 'ru.vyarus.animalsniffer' version '1.5.0'
+  id "signing"
+  id 'pl.allegro.tech.build.axion-release' version '1.13.3'
+  id "com.github.hierynomus.license" version "0.16.1"
+  id 'ru.vyarus.github-info' version '1.2.0'
+  id 'ru.vyarus.animalsniffer' version '1.5.3'
+  id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
 }
 
 repositories {
@@ -21,7 +22,6 @@ defaultTasks = ["build"]
 
 ext {
   moduleName = "${project.group}.${project.name.replaceAll("-", "")}"
-  bintrayLabels = ["asn1", "ASN.1", "serialization", "parser"]
 }
 
 sourceCompatibility = 1.7
@@ -55,7 +55,6 @@ scmVersion {
   }
   hooks {
     pre 'fileUpdate', [file: 'README.adoc', pattern: { v, c -> /:asn_version: .*/}, replacement: { v, c -> ":asn_version: $v" }]
-
     pre 'commit'
   }
 }
@@ -68,6 +67,11 @@ jar {
     manifest {
        attributes  'Automatic-Module-Name': moduleName
    }
+}
+
+java {
+	withJavadocJar()
+	withSourcesJar()
 }
 
 // This disables the pedantic doclint feature of JDK8
@@ -91,70 +95,74 @@ tasks.withType(Test) {
 
 project.tasks.compileGroovy.onlyIf { false }
 
-pom {
-  description 'ASN.1 serialization and parsing library'
-  url "https://gitlab.com/hierynomus/${project.name}"
-
-  licenses {
-    license {
-      name "Apache License 2.0"
-      url "https://opensource.org/licenses/Apache-2.0"
-      distribution "repo"
-    }
-  }
-  scm {
-    url "https://gitlab.com/hierynomus/${project.name}"
-    connection "scm:git@gitlab.com:hierynomus/${project.name}.git"
-    developerConnection "scm:git@gitlab.com:hierynomus/${project.name}.git"
-  }
-  issueManagement {
-    system 'GitLab'
-    url "https://gitlab.com/hierynomus/${project.name}/issues"
-  }
-  developers {
-    developer {
-      id "hierynomus"
-      name "Jeroen van Erp"
-      email "jeroen@hierynomus.com"
-      roles {
-        role "Lead developer"
-      }
-    }
-  }
+github {
+  user 'hierynomus'
+  license 'Apache'
 }
 
-if (project.hasProperty("bintrayUsername") && project.hasProperty("bintrayApiKey")) {
-  bintray {
-    user = project.property("bintrayUsername")
-    key = project.property("bintrayApiKey")
-    publish = true
-    publications = ["maven"]
-    pkg {
-      repo = "maven"
-      name = project.name
-      licenses = ["Apache-2.0"]
-      vcsUrl = "https://gitlab.com/hierynomus/${project.name}.git"
-      websiteUrl = "https://gitlab.com/hierynomus/${project.name}"
-      issueTrackerUrl = "https://gitlab.com/hierynomus/${project.name}/issues"
-      labels = project.ext.bintrayLabels
-      githubRepo = "hierynomus/${project.name}"
-      version {
-        name = "${project.version}"
-        vcsTag = "v${project.version}"
-        released = new SimpleDateFormat('yyyy-MM-dd\'T\'HH:mm:ss.SSSZZ').format(new Date())
-        gpg {
-          sign = true
-          passphrase = project.property("signing.password")
-        }
-        mavenCentralSync {
-          sync = true
-          user = project.property("sonatypeUsername")
-          password = project.property("sonatypePassword")
-          close = 1
-        }
+publishing {
+	publications {
+		maven(MavenPublication) {
+			from(components.java)
+		}
+	}
+}
+
+project.signing {
+  required { project.gradle.taskGraph.hasTask("release") }
+	sign publishing.publications.maven
+}
+
+if (project.hasProperty("signingKeyId") || project.hasProperty("signingKey")) {
+	project.signing {
+		def signingKeyId = project.findProperty("signingKeyId")
+		def signingKey = project.findProperty("signingKey")
+		def signingPassword = project.findProperty("signingPassword")
+		if (signingKeyId) {
+			useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+		} else if (signingKey) {
+			useInMemoryPgpKeys(signingKey, signingPassword)
+		}
+		sign publishing.publications.maven
+	}
+}
+
+project.plugins.withType(MavenPublishPlugin).all {
+	PublishingExtension publishing = project.extensions.getByType(PublishingExtension)
+	publishing.publications.withType(MavenPublication).all { mavenPublication ->
+		mavenPublication.pom {
+			name = "${project.name}"
+      description 'ASN.1 serialization and parsing library'
+      url "https://github.com/hierynomus/${project.name}"
+			licenses {
+				license {
+					name = "The Apache License, Version 2.0"
+					url = "https://www.apache.org/licenses/LICENSE-2.0"
+				}
+			}
+			developers {
+				developer {
+					id = "hierynomus"
+					name = "Jeroen van Erp"
+					email = "jeroen@hierynomus.com"
+				}
+			}
+      scm {
+        url "https://github.com/hierynomus/${project.name}"
+        connection "scm:git@github.com:hierynomus/${project.name}.git"
+        developerConnection "scm:git@github.com:hierynomus/${project.name}.git"
       }
-    }
-  }
+		}
+	}
+}
+
+nexusPublishing {
+	repositories {
+		sonatype()    //sonatypeUsername and sonatypePassword properties are used automatically
+	}
+
+	connectTimeout = Duration.ofMinutes(3)
+	clientTimeout = Duration.ofMinutes(3)
 }
 
 jacocoTestReport {
@@ -166,7 +174,7 @@ jacocoTestReport {
 
 task forkedUploadRelease(type: GradleBuild) {
   buildFile = project.buildFile
-  tasks = ["clean","currentVersion","bintrayUpload"]
+  tasks = ["clean","currentVersion","publishToSonatype"]
 }
 
 project.tasks.release.dependsOn([project.tasks.build])

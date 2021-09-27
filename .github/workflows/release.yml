@@ -1,0 +1,58 @@
+name: SSHJ Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  java12:
+    name: Build with Java 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 12
+        uses: actions/setup-java@v1
+        with:
+          java-version: 12
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build with Gradle
+        run: ./gradlew check
+  integration:
+    name: Integration test
+    needs: [java12]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 12
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build with Gradle
+        run: ./gradlew integrationTest
+  release:
+    name: Release
+    needs: [integration]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 12
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Release with
+        run: ./gradlew release -Prelease.customUsername=${{ github.actor }} -Prelease.customPassword=${{ github.token }}
+
+
