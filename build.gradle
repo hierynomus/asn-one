@@ -1,5 +1,3 @@
-import java.text.SimpleDateFormat
-
 plugins {
   id "java"
   id "groovy"
@@ -11,6 +9,7 @@ plugins {
   id 'ru.vyarus.github-info' version '1.2.0'
   id 'ru.vyarus.animalsniffer' version '1.5.3'
   id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
+  id "org.moditect.gradleplugin" version "1.0.0-rc3"
 }
 
 repositories {
@@ -61,12 +60,18 @@ scmVersion {
 
 project.version = scmVersion.version
 
-jar {
-    inputs.property("moduleName", moduleName)
-
-    manifest {
-       attributes  'Automatic-Module-Name': moduleName
-   }
+addMainModuleInfo {
+  version = project.version
+  jvmVersion = '9'
+  overwriteExistingFiles = true
+  module {
+    moduleInfo {
+      name = project.moduleName
+      exports = '''
+        *;
+      '''
+    }
+  }
 }
 
 java {
