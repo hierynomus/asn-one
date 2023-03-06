@@ -1,4 +1,4 @@
-name: SSHJ Release
+name: ASN One Release
 
 on:
   push:
