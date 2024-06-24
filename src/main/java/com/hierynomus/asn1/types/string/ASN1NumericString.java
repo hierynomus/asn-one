@@ -26,12 +26,12 @@ import com.hierynomus.asn1.types.ASN1Tag;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class ASN1PrintableString extends ASN1String<byte[]> {
-    public ASN1PrintableString(byte[] bytes) {
-        super(ASN1Tag.PRINTABLE_STRING, bytes);
+public class ASN1NumericString extends ASN1String<byte[]> {
+    public ASN1NumericString(byte[] bytes) {
+        super(ASN1Tag.NUMERIC_STRING, bytes);
     }
 
-    public ASN1PrintableString(ASN1Tag<?> tag, byte[] bytes) {
+    public ASN1NumericString(ASN1Tag<?> tag, byte[] bytes) {
         super(tag, bytes);
     }
 
@@ -50,31 +50,31 @@ public class ASN1PrintableString extends ASN1String<byte[]> {
         return valueBytes.length;
     }
 
-    public static class Parser extends ASN1Parser<ASN1PrintableString> {
+    public static class Parser extends ASN1Parser<ASN1NumericString> {
 
         public Parser(ASN1Decoder decoder) {
             super(decoder);
         }
 
         @Override
-        public ASN1PrintableString parse(ASN1Tag<ASN1PrintableString> asn1Tag, byte[] value) throws ASN1ParseException {
-            return new ASN1PrintableString(asn1Tag, value);
+        public ASN1NumericString parse(ASN1Tag<ASN1NumericString> asn1Tag, byte[] value) throws ASN1ParseException {
+            return new ASN1NumericString(asn1Tag, value);
         }
     }
 
-    public static class Serializer extends ASN1Serializer<ASN1PrintableString> {
+    public static class Serializer extends ASN1Serializer<ASN1NumericString> {
 
         public Serializer(final ASN1Encoder encoder) {
             super(encoder);
         }
 
         @Override
-        public int serializedLength(final ASN1PrintableString asn1Object) throws IOException {
+        public int serializedLength(final ASN1NumericString asn1Object) throws IOException {
             return asn1Object.valueBytes.length;
         }
 
         @Override
-        public void serialize(final ASN1PrintableString asn1Object, final ASN1OutputStream stream) throws IOException {
+        public void serialize(final ASN1NumericString asn1Object, final ASN1OutputStream stream) throws IOException {
             stream.write(asn1Object.valueBytes);
         }
     }
