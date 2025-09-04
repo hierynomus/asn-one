@@ -10,6 +10,7 @@ plugins {
   id 'ru.vyarus.animalsniffer' version '1.5.3'
   id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
   id "org.moditect.gradleplugin" version "1.0.0-rc3"
+  id "biz.aQute.bnd.builder" version "6.4.0"
 }
 
 repositories {
@@ -77,6 +78,19 @@ addMainModuleInfo {
 java {
 	withJavadocJar()
 	withSourcesJar()
+}
+
+jar {
+  // Add minimal OSGi metadata.
+  // We are using slf4j as a client, so can use also 2.x API.
+  bundle {
+    bnd '''
+Bundle-SymbolicName: ${project.group}.${project.name}
+Import-Package: org.slf4j;version="[1.7,3)", *
+-exportcontents: *
+-noextraheaders: true
+'''
+  }
 }
 
 // This disables the pedantic doclint feature of JDK8
