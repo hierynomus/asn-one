@@ -38,4 +38,8 @@ public abstract class ASN1PrimitiveValue<T> extends ASN1Object<T> implements ASN
         return Arrays.hashCode(valueBytes);
     }
 
+    @Override
+    public byte[] getValueBytes() {
+        return Arrays.copyOf(valueBytes, valueBytes.length);
+    }
 }

@@ -41,6 +41,7 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
         }
     }
 
+    @Override
     public byte[] getValueBytes() {
         return Arrays.copyOf(valueBytes, valueBytes.length);
     }

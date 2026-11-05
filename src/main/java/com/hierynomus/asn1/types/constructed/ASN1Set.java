@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types.constructed;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -49,6 +50,11 @@ public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Construc
 
     public Iterator<ASN1Object> iterator() {
         return new HashSet<>(objects).iterator();
+    }
+
+    @Override
+    public byte[] getValueBytes() {
+        return Arrays.copyOf(bytes, bytes.length);
     }
 
     public static class Parser extends ASN1Parser<ASN1Set> {
