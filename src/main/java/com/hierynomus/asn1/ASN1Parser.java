@@ -19,7 +19,7 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-public abstract class ASN1Parser<T extends ASN1Object> {
+public abstract class ASN1Parser<T extends ASN1Object<?>> {
     protected ASN1Decoder decoder;
 
     public ASN1Parser(ASN1Decoder decoder) {

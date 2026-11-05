@@ -28,28 +28,28 @@ import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Constructed {
-    private final List<ASN1Object> objects;
+public class ASN1Sequence extends ASN1Object<List<ASN1Object<?>>> implements ASN1Constructed {
+    private final List<ASN1Object<?>> objects;
     private byte[] bytes;
 
-    private ASN1Sequence(List<ASN1Object> objects, byte[] bytes) {
+    private ASN1Sequence(List<ASN1Object<?>> objects, byte[] bytes) {
         super(ASN1Tag.SEQUENCE);
         this.objects = objects;
         this.bytes = bytes;
     }
 
-    public ASN1Sequence(List<ASN1Object> objects) {
+    public ASN1Sequence(List<ASN1Object<?>> objects) {
         super(ASN1Tag.SEQUENCE);
         this.objects = objects;
     }
 
     @Override
-    public List<ASN1Object> getValue() {
+    public List<ASN1Object<?>> getValue() {
         return new ArrayList<>(objects);
     }
 
     @Override
-    public Iterator<ASN1Object> iterator() {
+    public Iterator<ASN1Object<?>> iterator() {
         return new ArrayList<>(objects).iterator();
     }
 
@@ -57,7 +57,7 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
         return objects.size();
     }
 
-    public ASN1Object get(int i) {
+    public ASN1Object<?> get(int i) {
         return objects.get(i);
     }
 
@@ -69,9 +69,9 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
 
         @Override
         public ASN1Sequence parse(ASN1Tag<ASN1Sequence> asn1Tag, byte[] value) throws ASN1ParseException {
-            List<ASN1Object> list = new ArrayList<>();
+            List<ASN1Object<?>> list = new ArrayList<>();
             try (ASN1InputStream stream = new ASN1InputStream(decoder, value)) {
-                for (ASN1Object asn1Object : stream) {
+                for (ASN1Object<?> asn1Object : stream) {
                     list.add(asn1Object);
                 }
             } catch (IOException e) {
@@ -96,9 +96,10 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
 
         private void calculateBytes(final ASN1Sequence asn1Object) throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, out);
-            for (ASN1Object object : asn1Object) {
-                asn1OutputStream.writeObject(object);
+            try (ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, out)) {
+                for (ASN1Object<?> object : asn1Object) {
+                    asn1OutputStream.writeObject(object);
+                }
             }
             asn1Object.bytes = out.toByteArray();
         }
@@ -108,7 +109,7 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
             if (asn1Object.bytes != null) {
                 stream.write(asn1Object.bytes);
             } else {
-                for (ASN1Object object : asn1Object) {
+                for (ASN1Object<?> object : asn1Object) {
                     stream.writeObject(object);
                 }
             }
