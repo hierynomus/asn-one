@@ -25,13 +25,13 @@ import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Constructed {
-    private final ASN1Object object;
+public class ASN1TaggedObject extends ASN1Object<ASN1Object<?>> implements ASN1Constructed {
+    private final ASN1Object<?> object;
     private byte[] bytes;
     private ASN1Decoder decoder;
     private boolean explicit = true;
 
-    public ASN1TaggedObject(ASN1Tag tag, ASN1Object object, boolean explicit) {
+    public ASN1TaggedObject(ASN1Tag<?> tag, ASN1Object<?> object, boolean explicit) {
         // If this is an explicitly tagged object, it should be constructed form
         // Else we take the form of the implictly tagged object.
         super(explicit ? tag.constructed() : tag.asEncoded(object.getTag().getAsn1Encoding()));
@@ -40,11 +40,11 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         this.bytes = null;
     }
 
-    public ASN1TaggedObject(ASN1Tag tag, ASN1Object object) {
+    public ASN1TaggedObject(ASN1Tag<?> tag, ASN1Object<?> object) {
         this(tag, object, true);
     }
 
-    private ASN1TaggedObject(ASN1Tag tag, byte[] bytes, ASN1Decoder decoder) {
+    private ASN1TaggedObject(ASN1Tag<?> tag, byte[] bytes, ASN1Decoder decoder) {
         super(tag);
         this.bytes = bytes;
         this.decoder = decoder;
@@ -56,7 +56,7 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
     }
 
     @Override
-    public ASN1Object getValue() {
+    public ASN1Object<?> getValue() {
         return getObject();
     }
 
@@ -69,7 +69,7 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
     }
 
     @Override
-    public Iterator<ASN1Object> iterator() {
+    public Iterator<ASN1Object<?>> iterator() {
         return getObject(ASN1Tag.SEQUENCE).iterator();
     }
 
@@ -99,14 +99,15 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
             return asn1Object.bytes.length;
         }
 
+        @SuppressWarnings("unchecked")
         private void calculateBytes(final ASN1TaggedObject asn1Object) throws IOException {
-            ASN1Object object = asn1Object.object;
+            ASN1Object<?> object = asn1Object.object;
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, baos)) {
                 if (asn1Object.explicit) {
                     asn1OutputStream.writeObject(object);
                 } else {
-                    object.getTag().newSerializer(encoder).serialize(object, asn1OutputStream);
+                    ((ASN1Serializer<ASN1Object<?>>) object.getTag().newSerializer(encoder)).serialize(object, asn1OutputStream);
                 }
                 asn1Object.bytes = baos.toByteArray();
             }
@@ -121,7 +122,7 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         }
     }
 
-    public ASN1Object getObject() {
+    public ASN1Object<?> getObject() {
         if (object != null) {
             return object;
         }
@@ -134,7 +135,8 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         }
     }
 
-    public <T extends ASN1Object> T getObject(ASN1Tag<T> tag) {
+    @SuppressWarnings("unchecked")
+    public <T extends ASN1Object<?>> T getObject(ASN1Tag<T> tag) {
         if (object != null && object.getTag().equals(tag)) {
             return (T) object;
         } else  if (object == null && bytes != null) {

@@ -25,11 +25,11 @@ public abstract class ASN1PrimitiveValue<T> extends ASN1Object<T> implements ASN
 
     protected byte[] valueBytes;
 
-    public ASN1PrimitiveValue(ASN1Tag tag) {
+    public ASN1PrimitiveValue(ASN1Tag<? extends ASN1PrimitiveValue<T>> tag) {
         super(tag);
     }
 
-    public ASN1PrimitiveValue(ASN1Tag tag, byte[] valueBytes) {
+    public ASN1PrimitiveValue(ASN1Tag<? extends ASN1PrimitiveValue<T>> tag, byte[] valueBytes) {
         super(tag);
         this.valueBytes = valueBytes;
     }

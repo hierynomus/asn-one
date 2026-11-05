@@ -17,9 +17,9 @@ package com.hierynomus.asn1.types;
 
 public abstract class ASN1Object<T> {
 
-    protected ASN1Tag tag;
+    protected ASN1Tag<? extends ASN1Object<?>> tag;
 
-    protected ASN1Object(ASN1Tag tag) {
+    protected ASN1Object(ASN1Tag<? extends ASN1Object<?>> tag) {
         this.tag = tag;
     }
 
@@ -30,7 +30,8 @@ public abstract class ASN1Object<T> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ASN1Object that = (ASN1Object) o;
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        ASN1Object<? extends ASN1Object<?>> that = (ASN1Object) o;
 
         if (tag != that.tag) return false;
         return getValue() != null ? getValue().equals(that.getValue()) : that.getValue() == null;
@@ -51,7 +52,7 @@ public abstract class ASN1Object<T> {
 
     protected String valueString() { return this.getValue() != null ? this.getValue().toString() : null; }
 
-    public ASN1Tag getTag() {
+    public ASN1Tag<? extends ASN1Object<?>> getTag() {
         return tag;
     }
 }
