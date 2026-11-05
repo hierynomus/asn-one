@@ -26,6 +26,8 @@ import com.hierynomus.asn1.types.constructed.ASN1TaggedObject;
 import com.hierynomus.asn1.types.primitive.*;
 import com.hierynomus.asn1.types.string.ASN1BitString;
 import com.hierynomus.asn1.types.string.ASN1OctetString;
+import com.hierynomus.asn1.types.string.ASN1PrintableString;
+import com.hierynomus.asn1.types.string.ASN1UTCTime;
 
 import java.util.*;
 
@@ -132,7 +134,32 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         @Override
         public ASN1Serializer<ASN1Sequence> newSerializer(ASN1Encoder encoder) {
             return new ASN1Sequence.Serializer(encoder);
-        }    };
+        }
+    };
+
+    public static final ASN1Tag<ASN1PrintableString> PRINTABLE_STRING = new ASN1Tag<ASN1PrintableString>(UNIVERSAL, 0x13, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+        @Override
+        public ASN1Parser<ASN1PrintableString> newParser(ASN1Decoder decoder) {
+            return new ASN1PrintableString.Parser(decoder);
+        }
+        @Override
+        public ASN1Serializer<ASN1PrintableString> newSerializer(ASN1Encoder encoder) {
+            return new ASN1PrintableString.Serializer(encoder);
+        }
+    };
+
+
+    public static final ASN1Tag<ASN1UTCTime> UTC_TIME = new ASN1Tag<ASN1UTCTime>(UNIVERSAL, 0x17, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+
+        @Override
+        public ASN1Parser<ASN1UTCTime> newParser(ASN1Decoder decoder) {
+            return new ASN1UTCTime.Parser(decoder);
+        }
+        @Override
+        public ASN1Serializer<ASN1UTCTime> newSerializer(ASN1Encoder encoder) {
+            return new ASN1UTCTime.Serializer(encoder);
+        }
+    };
 
     static {
         tags.put(BOOLEAN.getTag(), BOOLEAN);
@@ -144,6 +171,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         tags.put(ENUMERATED.getTag(), ENUMERATED);
         tags.put(SET.getTag(), SET);
         tags.put(SEQUENCE.getTag(), SEQUENCE);
+        tags.put(PRINTABLE_STRING.getTag(), PRINTABLE_STRING);
+        tags.put(UTC_TIME.getTag(), UTC_TIME);
     }
 
     private final ASN1TagClass asn1TagClass;
