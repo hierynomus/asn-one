@@ -279,7 +279,7 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             default:
                 break;
         }
-        throw new ASN1ParseException(format("Unknown ASN.1 tag '%s:%s' found (%s)", asn1TagClass, tag, ASN1Tag.tags));
+        throw new ASN1ParseException("Unknown ASN.1 tag '%s:%s' found", asn1TagClass, tag);
     }
 
     public int getTag() {

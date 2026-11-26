@@ -19,6 +19,8 @@ import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -31,6 +33,9 @@ import com.hierynomus.asn1.types.ASN1Tag;
 public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1Object> {
     private static final Logger logger = LoggerFactory.getLogger(ASN1InputStream.class);
     private final ASN1Decoder decoder;
+    private boolean atStart = true;
+
+    private static final byte[] PEM_PREAMBLE = "-----BEGIN".getBytes(StandardCharsets.US_ASCII);
 
     public ASN1InputStream(ASN1Decoder decoder, InputStream wrapped) {
         super(wrapped);
@@ -43,6 +48,10 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
     }
 
     public <T extends ASN1Object> T readObject() {
+        if (atStart) {
+            atStart = false;
+            checkNotPem();
+        }
         try {
             ASN1Tag tag = decoder.readTag(this);
             logger.trace("Read ASN.1 tag {}", tag);
@@ -58,6 +67,34 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
             throw pe;
         } catch (Exception e) {
             throw new ASN1ParseException(e, "Cannot parse ASN.1 object from stream");
+        }
+    }
+
+    /**
+     * PEM is a common mistake when reading e.g. certificates; its first byte '-' (0x2D) would otherwise be reported as
+     * an unknown ASN.1 tag 'UNIVERSAL:13'.
+     */
+    private void checkNotPem() {
+        if (!markSupported()) {
+            return;
+        }
+        try {
+            mark(PEM_PREAMBLE.length);
+            byte[] start = new byte[PEM_PREAMBLE.length];
+            int read = 0;
+            while (read < start.length) {
+                int n = read(start, read, start.length - read);
+                if (n < 0) {
+                    break;
+                }
+                read += n;
+            }
+            reset();
+            if (read == PEM_PREAMBLE.length && Arrays.equals(start, PEM_PREAMBLE)) {
+                throw new ASN1ParseException("Input is PEM encoded ('-----BEGIN ...'), not BER/DER. Base64 decode the contents between the BEGIN and END lines first.");
+            }
+        } catch (IOException e) {
+            throw new ASN1ParseException(e, "Cannot read from stream");
         }
     }
 
@@ -79,11 +116,11 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
 
             @Override
             public ASN1Object next() {
-                try {
-                    return readObject();
-                } catch (Exception e) {
-                    throw new NoSuchElementException(e.getMessage());
+                if (!hasNext()) {
+                    throw new NoSuchElementException("No more ASN.1 objects in stream");
                 }
+                // Let an ASN1ParseException propagate as is, so the actual cause is not lost.
+                return readObject();
             }
 
             @Override
