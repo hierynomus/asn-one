@@ -1,6 +1,5 @@
 plugins {
   id "java"
-  id "groovy"
   id "jacoco"
   id "maven-publish"
   id "signing"
@@ -35,10 +34,8 @@ configurations.implementation.transitive = false
 
 dependencies {
   implementation "org.slf4j:slf4j-api:1.7.36"
-  testImplementation platform('org.junit:junit-bom:5.13.4')
-  testImplementation 'org.apache.groovy:groovy:4.0.30'
-  testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
-  testImplementation 'javax.xml.bind:jaxb-api:2.3.1'
+  testImplementation platform('org.junit:junit-bom:6.1.3')
+  testImplementation 'org.junit.jupiter:junit-jupiter'
   testRuntimeOnly 'ch.qos.logback:logback-classic:1.2.13'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -47,7 +44,6 @@ license {
   header = project.file("HEADER")
   mapping {
     java = 'SLASHSTAR_STYLE'
-    groovy = 'SLASHSTAR_STYLE'
   }
   strictCheck = true
 }
@@ -115,7 +111,6 @@ if (JavaVersion.current().isJava8Compatible()) {
 tasks.withType(Test).configureEach {
   useJUnitPlatform()
   include "**/*Test.*"
-  include "**/*Spec.*"
   def testLogger = logger
   addTestListener(new TestListener() {
     void beforeSuite(TestDescriptor suite) {}
@@ -130,8 +125,6 @@ tasks.withType(Test).configureEach {
     }
   })
 }
-
-project.tasks.compileGroovy.onlyIf { false }
 
 github {
   user = 'hierynomus'

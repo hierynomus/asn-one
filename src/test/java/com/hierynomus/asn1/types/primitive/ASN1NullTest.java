@@ -1,0 +1,45 @@
+/*
+ *    Copyright 2016 Jeroen van Erp <jeroen@hierynomus.com>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package com.hierynomus.asn1.types.primitive;
+
+import com.hierynomus.asn1.ASN1InputStream;
+import com.hierynomus.asn1.ASN1OutputStream;
+import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import static com.hierynomus.asn1.Bytes.bytes;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ASN1NullTest {
+
+    @Test
+    void shouldParseNull() {
+        assertEquals(new ASN1Null(), new ASN1InputStream(new BERDecoder(), bytes(0x05, 0x00)).readObject());
+    }
+
+    @Test
+    void shouldWriteNull() throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+        new ASN1OutputStream(null, stream).writeObject(new ASN1Null());
+
+        assertArrayEquals(bytes(0x05, 0x00), stream.toByteArray());
+    }
+}
