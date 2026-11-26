@@ -18,6 +18,7 @@ package com.hierynomus.asn1.types.primitive;
 import java.io.IOException;
 import java.math.BigInteger;
 import com.hierynomus.asn1.ASN1OutputStream;
+import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.ASN1Serializer;
@@ -59,6 +60,10 @@ public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public ASN1Integer parse(ASN1Tag<ASN1Integer> asn1Tag, byte[] value) {
+            if (value.length == 0) {
+                // X.690 8.3.1 (8.4 for ENUMERATED): the contents consist of one or more octets
+                throw new ASN1ParseException("ASN.1 INTEGER must have at least one content octet");
+            }
             return new ASN1Integer(value, new BigInteger(value));
         }
     }

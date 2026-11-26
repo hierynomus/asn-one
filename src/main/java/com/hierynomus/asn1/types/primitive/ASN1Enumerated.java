@@ -54,6 +54,10 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public ASN1Enumerated parse(ASN1Tag<ASN1Enumerated> asn1Tag, byte[] value) throws ASN1ParseException {
+            if (value.length == 0) {
+                // X.690 8.3.1 (8.4 for ENUMERATED): the contents consist of one or more octets
+                throw new ASN1ParseException("ASN.1 ENUMERATED must have at least one content octet");
+            }
             BigInteger enumValue = new BigInteger(value);
             return new ASN1Enumerated(enumValue, value);
         }

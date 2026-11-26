@@ -23,6 +23,7 @@ import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.types.ASN1UnknownObject;
 import com.hierynomus.asn1.types.ASN1TagClass;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -37,6 +38,7 @@ import java.io.InputStream;
  */
 public class BERDecoder implements ASN1Decoder {
     private final boolean lenient;
+    private static final int READ_CHUNK_SIZE = 8192;
 
     public BERDecoder() {
         this(false);
@@ -86,6 +88,9 @@ public class BERDecoder implements ASN1Decoder {
 
                 while ((read >= 0) && ((read & 0x80) != 0)) {
                     iTag |= (read & 0x7f);
+                    if (iTag > (Integer.MAX_VALUE >> 7)) {
+                        throw new ASN1ParseException("ASN.1 tag number too large");
+                    }
                     iTag <<= 7;
                     read = is.read();
                 }
@@ -99,7 +104,7 @@ public class BERDecoder implements ASN1Decoder {
                 return lookupTag(asn1TagClass, iTag).asEncoded(asn1Encoding);
             }
         } catch (IOException ioe) {
-            throw new ASN1ParseException("Unable to parse ASN.1 tag", ioe);
+            throw new ASN1ParseException(ioe, "Unable to parse ASN.1 tag");
         }
     }
 
@@ -135,25 +140,29 @@ public class BERDecoder implements ASN1Decoder {
             }
             return (int) longLength;
         } catch (IOException ioe) {
-            throw new ASN1ParseException("Unable to read the length of the ASN.1 object.", ioe);
+            throw new ASN1ParseException(ioe, "Unable to read the length of the ASN.1 object.");
         }
     }
 
     @Override
     public byte[] readValue(int length, InputStream is) {
         try {
-            byte[] value = new byte[length];
+            // Read in chunks rather than allocating the declared length up front: the length comes from the input,
+            // so a few bytes claiming a huge length must not be able to exhaust memory.
+            ByteArrayOutputStream value = new ByteArrayOutputStream(Math.min(length, READ_CHUNK_SIZE));
+            byte[] chunk = new byte[Math.min(length, READ_CHUNK_SIZE)];
             int count = 0;
-            int read = 0;
-            while (count < length && ((read = is.read(value, count, length - count)) != -1)) {
+            while (count < length) {
+                int read = is.read(chunk, 0, Math.min(chunk.length, length - count));
+                if (read < 0) {
+                    throw new ASN1ParseException("Unexpected end of stream, ASN.1 object has length %s but only %s bytes are available", length, count);
+                }
+                value.write(chunk, 0, read);
                 count += read;
             }
-            if (count < length) {
-                throw new ASN1ParseException("Unexpected end of stream, ASN.1 object has length %s but only %s bytes are available", length, count);
-            }
-            return value;
+            return value.toByteArray();
         } catch (IOException ioe) {
-            throw new ASN1ParseException("Unable to read the value of the ASN.1 object", ioe);
+            throw new ASN1ParseException(ioe, "Unable to read the value of the ASN.1 object");
         }
     }
 }

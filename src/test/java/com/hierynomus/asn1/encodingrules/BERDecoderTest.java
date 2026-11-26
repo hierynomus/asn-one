@@ -31,6 +31,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static com.hierynomus.asn1.Bytes.bytes;
@@ -50,7 +51,12 @@ class BERDecoderTest {
             arguments("value shorter than length", bytes(0x04, 0x05, 0x01, 0x02)),
             arguments("length of 5 octets", bytes(0x04, 0x85, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00)),
             arguments("length beyond Integer.MAX_VALUE", bytes(0x04, 0x84, 0x80, 0x00, 0x00, 0x00)),
-            arguments("indefinite length", bytes(0x24, 0x80, 0x04, 0x01, 0x01, 0x00, 0x00)));
+            arguments("indefinite length", bytes(0x24, 0x80, 0x04, 0x01, 0x01, 0x00, 0x00)),
+            // Must fail on the missing data, not by allocating the declared length up front
+            arguments("length 0x7fffffff with no data", bytes(0x04, 0x84, 0x7f, 0xff, 0xff, 0xff)),
+            arguments("length 0x7ffffff0 with a little data", bytes(0x04, 0x84, 0x7f, 0xff, 0xff, 0xf0, 0x01, 0x02, 0x03)),
+            arguments("tag number beyond int range", bytes(0x9f, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0x00)),
+            arguments("tag number of 2^31", bytes(0x9f, 0x88, 0x80, 0x80, 0x80, 0x00, 0x00)));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -96,6 +102,31 @@ class BERDecoderTest {
         ASN1TaggedObject tagged = new ASN1InputStream(new BERDecoder(), bytes(0xa0, 0x04, 0x05, 0x00, 0x05, 0x00)).readObject();
 
         assertThrows(ASN1ParseException.class, tagged::getObject);
+    }
+
+    @Test
+    void shouldReadLargestSupportedTagNumber() {
+        // 2^31 - 1 = 0x7fffffff in base 128: 07 7f 7f 7f 7f
+        ASN1TaggedObject tagged = new ASN1InputStream(new BERDecoder(), bytes(0x9f, 0x87, 0xff, 0xff, 0xff, 0x7f, 0x00)).readObject();
+
+        assertEquals(Integer.MAX_VALUE, tagged.getTag().getTag());
+    }
+
+    @Test
+    void shouldReadValueLargerThanReadChunk() {
+        byte[] content = new byte[100_000];
+        Arrays.fill(content, (byte) 0x5a);
+        byte[] encoded = new byte[content.length + 5];
+        encoded[0] = 0x04;
+        encoded[1] = (byte) 0x83;
+        encoded[2] = (byte) (content.length >> 16);
+        encoded[3] = (byte) (content.length >> 8);
+        encoded[4] = (byte) content.length;
+        System.arraycopy(content, 0, encoded, 5, content.length);
+
+        ASN1OctetString octetString = new ASN1InputStream(new BERDecoder(), encoded).readObject();
+
+        assertArrayEquals(content, octetString.getValue());
     }
 
     private static byte[] write(ASN1Object<?> object) throws IOException {
