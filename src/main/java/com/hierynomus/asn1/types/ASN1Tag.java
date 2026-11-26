@@ -148,9 +148,7 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         }
     };
 
-
     public static final ASN1Tag<ASN1UTCTime> UTC_TIME = new ASN1Tag<ASN1UTCTime>(UNIVERSAL, 0x17, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
-
         @Override
         public ASN1Parser<ASN1UTCTime> newParser(ASN1Decoder decoder) {
             return new ASN1UTCTime.Parser(decoder);

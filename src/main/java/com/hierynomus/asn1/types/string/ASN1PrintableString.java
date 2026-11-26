@@ -15,73 +15,97 @@
  */
 package com.hierynomus.asn1.types.string;
 
-import java.io.IOException;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 
-import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-public final class ASN1PrintableString extends ASN1String<byte[]> {
-    public ASN1PrintableString(byte[] bytes) {
-        super(ASN1Tag.PRINTABLE_STRING, bytes);
+/**
+ * ASN.1 PrintableString (UNIVERSAL 19, X.680 clause 41).
+ * <p>
+ * Permitted characters are {@code A-Z a-z 0-9}, space and {@code ' ( ) + , - . / : = ?}. As with all
+ * {@link ASN1CharacterString character strings}, this is enforced when constructing a value, but not when parsing.
+ */
+public class ASN1PrintableString extends ASN1CharacterString {
+
+    public ASN1PrintableString(String value) {
+        this(ASN1Tag.PRINTABLE_STRING, value);
     }
 
-    public ASN1PrintableString(ASN1Tag<ASN1PrintableString> tag, byte[] bytes) {
-        super(tag, bytes);
+    /**
+     * @param tag the tag to use, e.g. an implicit tag
+     * @param value the string value
+     * @throws IllegalArgumentException if the value contains a character not permitted in a PrintableString
+     */
+    public ASN1PrintableString(ASN1Tag<?> tag, String value) {
+        super(tag, checkPrintable(value), StandardCharsets.US_ASCII);
     }
 
-    @Override
-    public byte[] getValue() {
-        return Arrays.copyOf(valueBytes, valueBytes.length);
+    private ASN1PrintableString(ASN1Tag<?> tag, byte[] bytes) {
+        // ISO-8859-1 maps every octet to a character, so even non-conforming content survives a round trip.
+        super(tag, bytes, StandardCharsets.ISO_8859_1);
     }
 
-    @Override
-    protected String valueString() {
-        return Arrays.toString(valueBytes);
+    /**
+     * @return whether every character of {@code value} is permitted in a PrintableString.
+     */
+    public static boolean isPrintableString(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (!isPrintableCharacter(value.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    @Override
-    public int length() {
-        return valueBytes.length;
+    private static boolean isPrintableCharacter(char c) {
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+            return true;
+        }
+        switch (c) {
+            case ' ':
+            case '\'':
+            case '(':
+            case ')':
+            case '+':
+            case ',':
+            case '-':
+            case '.':
+            case '/':
+            case ':':
+            case '=':
+            case '?':
+                return true;
+            default:
+                return false;
+        }
     }
 
-    @Override
-    public String toString() {
-        String str = new String(valueBytes);
-        return this.getClass().getSimpleName() + " [" + str + "]";
+    private static String checkPrintable(String value) {
+        if (!isPrintableString(value)) {
+            throw new IllegalArgumentException("Value contains characters not permitted in an ASN.1 PrintableString: " + value);
+        }
+        return value;
     }
 
     public static class Parser extends ASN1Parser<ASN1PrintableString> {
-
         public Parser(ASN1Decoder decoder) {
             super(decoder);
         }
 
         @Override
         public ASN1PrintableString parse(ASN1Tag<ASN1PrintableString> asn1Tag, byte[] value) throws ASN1ParseException {
-            return new ASN1PrintableString(asn1Tag, value);
+            byte[] contents = primitiveContents(decoder, asn1Tag, ASN1Tag.PRINTABLE_STRING.getTag(), value);
+            return new ASN1PrintableString(asn1Tag.primitive(), contents);
         }
     }
 
-    public static class Serializer extends ASN1Serializer<ASN1PrintableString> {
-
-        public Serializer(final ASN1Encoder encoder) {
+    public static class Serializer extends CharacterStringSerializer<ASN1PrintableString> {
+        public Serializer(ASN1Encoder encoder) {
             super(encoder);
-        }
-
-        @Override
-        public int serializedLength(final ASN1PrintableString asn1Object) throws IOException {
-            return asn1Object.valueBytes.length;
-        }
-
-        @Override
-        public void serialize(final ASN1PrintableString asn1Object, final ASN1OutputStream stream) throws IOException {
-            stream.write(asn1Object.valueBytes);
         }
     }
 }
