@@ -63,11 +63,11 @@ public abstract class ASN1CharacterString extends ASN1String<String> {
     }
 
     /**
-     * @return the number of characters in this string.
+     * @return the number of characters (Unicode code points) in this string.
      */
     @Override
     public int length() {
-        return value.length();
+        return value.codePointCount(0, value.length());
     }
 
     /**

@@ -25,9 +25,11 @@ import com.hierynomus.asn1.types.constructed.ASN1Set;
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObject;
 import com.hierynomus.asn1.types.primitive.*;
 import com.hierynomus.asn1.types.string.ASN1BitString;
+import com.hierynomus.asn1.types.string.ASN1NumericString;
 import com.hierynomus.asn1.types.string.ASN1OctetString;
 import com.hierynomus.asn1.types.string.ASN1PrintableString;
 import com.hierynomus.asn1.types.string.ASN1UTCTime;
+import com.hierynomus.asn1.types.string.ASN1UTF8String;
 
 import java.util.*;
 
@@ -79,6 +81,26 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         @Override
         public ASN1Serializer<ASN1OctetString> newSerializer(ASN1Encoder encoder) {
             return new ASN1OctetString.Serializer(encoder);
+        }
+    };
+    public static final ASN1Tag<ASN1UTF8String> UTF8_STRING = new ASN1Tag<ASN1UTF8String>(UNIVERSAL, 0x0C, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+        @Override
+        public ASN1Parser<ASN1UTF8String> newParser(ASN1Decoder decoder) {
+            return new ASN1UTF8String.Parser(decoder);
+        }
+        @Override
+        public ASN1Serializer<ASN1UTF8String> newSerializer(ASN1Encoder encoder) {
+            return new ASN1UTF8String.Serializer(encoder);
+        }
+    };
+    public static final ASN1Tag<ASN1NumericString> NUMERIC_STRING = new ASN1Tag<ASN1NumericString>(UNIVERSAL, 0x12, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+        @Override
+        public ASN1Parser<ASN1NumericString> newParser(ASN1Decoder decoder) {
+            return new ASN1NumericString.Parser(decoder);
+        }
+        @Override
+        public ASN1Serializer<ASN1NumericString> newSerializer(ASN1Encoder encoder) {
+            return new ASN1NumericString.Serializer(encoder);
         }
     };
     public static final ASN1Tag<ASN1Null> NULL = new ASN1Tag<ASN1Null>(UNIVERSAL, 0x05, ASN1Encoding.PRIMITIVE) {
@@ -164,6 +186,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         tags.put(INTEGER.getTag(), INTEGER);
         tags.put(BIT_STRING.getTag(), BIT_STRING);
         tags.put(OCTET_STRING.getTag(), OCTET_STRING);
+        tags.put(UTF8_STRING.getTag(), UTF8_STRING);
+        tags.put(NUMERIC_STRING.getTag(), NUMERIC_STRING);
         tags.put(NULL.getTag(), NULL);
         tags.put(OBJECT_IDENTIFIER.getTag(), OBJECT_IDENTIFIER);
         tags.put(ENUMERATED.getTag(), ENUMERATED);
