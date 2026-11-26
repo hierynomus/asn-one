@@ -42,11 +42,11 @@ class ASN1IntegerSpec extends Specification {
 
     where:
     buffer                   | value
-    [0x02, 0x01, 0x03]       | new ASN1Integer(new BigInteger(3))
-    [0x02, 0x01, 0x7F]       | new ASN1Integer(new BigInteger(127))
-    [0x02, 0x01, 0x80]       | new ASN1Integer(new BigInteger(-128))
-    [0x02, 0x02, 0x00, 0x80] | new ASN1Integer(new BigInteger(128))
-    [0x02, 0x01, 0x83]       | new ASN1Integer(new BigInteger(-125))
+    [0x02, 0x01, 0x03]       | new ASN1Integer(BigInteger.valueOf(3))
+    [0x02, 0x01, 0x7F]       | new ASN1Integer(BigInteger.valueOf(127))
+    [0x02, 0x01, 0x80]       | new ASN1Integer(BigInteger.valueOf(-128))
+    [0x02, 0x02, 0x00, 0x80] | new ASN1Integer(BigInteger.valueOf(128))
+    [0x02, 0x01, 0x83]       | new ASN1Integer(BigInteger.valueOf(-125))
     LARGE_INT                | new ASN1Integer(new BigInteger(INT_VAL))
   }
 
@@ -76,11 +76,11 @@ class ASN1IntegerSpec extends Specification {
 
     where:
     value                                    | bytes
-    new ASN1Integer(new BigInteger(3))       | [0x02, 0x01, 0x03]
-    new ASN1Integer(new BigInteger(127))     | [0x02, 0x01, 0x7F]
-    new ASN1Integer(new BigInteger(-128))    | [0x02, 0x01, 0x80]
-    new ASN1Integer(new BigInteger(128))     | [0x02, 0x02, 0x00, 0x80]
-    new ASN1Integer(new BigInteger(-125))    | [0x02, 0x01, 0x83]
+    new ASN1Integer(BigInteger.valueOf(3))       | [0x02, 0x01, 0x03]
+    new ASN1Integer(BigInteger.valueOf(127))     | [0x02, 0x01, 0x7F]
+    new ASN1Integer(BigInteger.valueOf(-128))    | [0x02, 0x01, 0x80]
+    new ASN1Integer(BigInteger.valueOf(128))     | [0x02, 0x02, 0x00, 0x80]
+    new ASN1Integer(BigInteger.valueOf(-125))    | [0x02, 0x01, 0x83]
     new ASN1Integer(new BigInteger(INT_VAL)) | LARGE_INT
   }
 
