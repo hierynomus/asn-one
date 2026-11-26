@@ -23,12 +23,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import com.hierynomus.asn1.ASN1OutputStream;
-import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
+
+import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 /**
  * ASN.1 OBJECT IDENTIFIER (UNIVERSAL 6), in dotted notation, e.g. {@code 1.2.840.113549}.
@@ -93,22 +94,16 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
 
         @Override
         public ASN1ObjectIdentifier parse(ASN1Tag<ASN1ObjectIdentifier> asn1Tag, byte[] value) {
-            if (value.length == 0) {
-                throw new ASN1ParseException("An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
-            }
+            checkFormat(value.length > 0, "An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
             List<BigInteger> subidentifiers = new ArrayList<>();
             int i = 0;
             while (i < value.length) {
-                if ((value[i] & 0xff) == 0x80) {
-                    // X.690 8.19.2: a subidentifier shall be encoded in the fewest possible octets
-                    throw new ASN1ParseException("Non-minimal subidentifier encoding in ASN.1 OBJECT IDENTIFIER at offset %s", i);
-                }
+                // X.690 8.19.2: a subidentifier shall be encoded in the fewest possible octets
+                checkFormat((value[i] & 0xff) != 0x80, "Non-minimal subidentifier encoding in ASN.1 OBJECT IDENTIFIER at offset %s", i);
                 BigInteger subidentifier = BigInteger.ZERO;
                 int b;
                 do {
-                    if (i >= value.length) {
-                        throw new ASN1ParseException("Truncated subidentifier in ASN.1 OBJECT IDENTIFIER");
-                    }
+                    checkFormat(i < value.length, "Truncated subidentifier in ASN.1 OBJECT IDENTIFIER");
                     b = value[i++] & 0xff;
                     subidentifier = subidentifier.shiftLeft(7).or(BigInteger.valueOf(b & 0x7f));
                 } while ((b & 0x80) != 0);

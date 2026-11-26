@@ -27,6 +27,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 /**
  * Decoder for the Basic Encoding Rules (X.690).
  * <p>
@@ -70,9 +72,7 @@ public class BERDecoder implements ASN1Decoder {
     public ASN1Tag<? extends ASN1Object> readTag(InputStream is) {
         try {
             int tagByte = is.read();
-            if (tagByte < 0) {
-                throw new ASN1ParseException("Unexpected end of stream, expected an ASN.1 tag");
-            }
+            checkFormat(tagByte >= 0, "Unexpected end of stream, expected an ASN.1 tag");
             ASN1TagClass asn1TagClass = ASN1TagClass.parseClass((byte) tagByte);
             ASN1Encoding asn1Encoding = ASN1Encoding.parseEncoding((byte) tagByte);
             int tag = tagByte & 0x1f;
@@ -82,22 +82,16 @@ public class BERDecoder implements ASN1Decoder {
             } else {
                 int iTag = 0;
                 int read = is.read();
-                if ((read & 0x7f) == 0) {
-                    throw new ASN1ParseException("corrupted stream - invalid high tag number found");
-                }
+                checkFormat((read & 0x7f) != 0, "corrupted stream - invalid high tag number found");
 
                 while ((read >= 0) && ((read & 0x80) != 0)) {
                     iTag |= (read & 0x7f);
-                    if (iTag > (Integer.MAX_VALUE >> 7)) {
-                        throw new ASN1ParseException("ASN.1 tag number too large");
-                    }
+                    checkFormat(iTag <= (Integer.MAX_VALUE >> 7), "ASN.1 tag number too large");
                     iTag <<= 7;
                     read = is.read();
                 }
 
-                if (read < 0) {
-                    throw new ASN1ParseException("EOF found inside tag value.");
-                }
+                checkFormat(read >= 0, "EOF found inside tag value.");
 
                 iTag |= (read & 0x7f);
 
@@ -112,32 +106,22 @@ public class BERDecoder implements ASN1Decoder {
     public int readLength(InputStream is) {
         try {
             int firstByte = is.read();
-            if (firstByte < 0) {
-                throw new ASN1ParseException("Unexpected end of stream, expected the length of the ASN.1 object");
-            }
+            checkFormat(firstByte >= 0, "Unexpected end of stream, expected the length of the ASN.1 object");
             if (firstByte <= 0x7f) {
                 // Short form (X.690 8.1.3.4)
                 return firstByte;
             }
             int nrBytes = firstByte & 0x7f;
-            if (nrBytes == 0) {
-                // 0x80 denotes the indefinite form (X.690 8.1.3.6)
-                throw new ASN1ParseException("The indefinite length form is not (yet) supported!");
-            }
-            if (nrBytes > 4) {
-                throw new ASN1ParseException("ASN.1 length of %s bytes is not supported", nrBytes);
-            }
+            // 0x80 denotes the indefinite form (X.690 8.1.3.6)
+            checkFormat(nrBytes != 0, "The indefinite length form is not (yet) supported!");
+            checkFormat(nrBytes <= 4, "ASN.1 length of %s bytes is not supported", nrBytes);
             long longLength = 0;
             for (int i = 0; i < nrBytes; i++) {
                 int b = is.read();
-                if (b < 0) {
-                    throw new ASN1ParseException("Unexpected end of stream while reading the length of the ASN.1 object");
-                }
+                checkFormat(b >= 0, "Unexpected end of stream while reading the length of the ASN.1 object");
                 longLength = (longLength << 8) | b;
             }
-            if (longLength > Integer.MAX_VALUE) {
-                throw new ASN1ParseException("ASN.1 length %s is not supported", longLength);
-            }
+            checkFormat(longLength <= Integer.MAX_VALUE, "ASN.1 length %s is not supported", longLength);
             return (int) longLength;
         } catch (IOException ioe) {
             throw new ASN1ParseException(ioe, "Unable to read the length of the ASN.1 object.");
@@ -154,9 +138,7 @@ public class BERDecoder implements ASN1Decoder {
             int count = 0;
             while (count < length) {
                 int read = is.read(chunk, 0, Math.min(chunk.length, length - count));
-                if (read < 0) {
-                    throw new ASN1ParseException("Unexpected end of stream, ASN.1 object has length %s but only %s bytes are available", length, count);
-                }
+                checkFormat(read >= 0, "Unexpected end of stream, ASN.1 object has length %s but only %s bytes are available", length, count);
                 value.write(chunk, 0, read);
                 count += read;
             }

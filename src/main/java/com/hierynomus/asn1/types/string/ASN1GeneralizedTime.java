@@ -31,6 +31,8 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 /**
  * ASN.1 GeneralizedTime (UNIVERSAL 24, X.680 clause 46), defined as a VisibleString of the form
  * {@code YYYYMMDDhh[mm[ss]]}, optionally followed by a decimal fraction (with {@code .} or {@code ,}) of the last
@@ -92,9 +94,7 @@ public class ASN1GeneralizedTime extends ASN1CharacterString {
 
     private static Date parse(String value) {
         Matcher m = GENERALIZED_TIME.matcher(value);
-        if (!m.matches()) {
-            throw new ASN1ParseException("Invalid ASN.1 GeneralizedTime: '%s'", value);
-        }
+        checkFormat(m.matches(), "Invalid ASN.1 GeneralizedTime: '%s'", value);
         String zone = m.group(8);
         Calendar calendar = newCalendar(zone == null ? TimeZone.getDefault() : UTC);
         calendar.set(Integer.parseInt(m.group(1)),
@@ -115,9 +115,7 @@ public class ASN1GeneralizedTime extends ASN1CharacterString {
         if (m.group(9) != null) {
             int offsetHours = Integer.parseInt(m.group(10));
             int offsetMinutes = m.group(11) != null ? Integer.parseInt(m.group(11)) : 0;
-            if (offsetHours > 23 || offsetMinutes > 59) {
-                throw new ASN1ParseException("Invalid offset in ASN.1 GeneralizedTime: '%s'", value);
-            }
+            checkFormat(offsetHours <= 23 && offsetMinutes <= 59, "Invalid offset in ASN.1 GeneralizedTime: '%s'", value);
             offsetMillis = (offsetHours * MILLIS_PER_HOUR + offsetMinutes * MILLIS_PER_MINUTE) * ("-".equals(m.group(9)) ? -1 : 1);
         }
         try {

@@ -28,6 +28,8 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1Object> {
     private static final Logger logger = LoggerFactory.getLogger(ASN1InputStream.class);
     private final ASN1Decoder decoder;
@@ -59,9 +61,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
 
     public <T extends ASN1Object> T readObject() {
         int[] depth = NESTING_DEPTH.get();
-        if (depth[0] >= MAX_NESTING_DEPTH) {
-            throw new ASN1ParseException("ASN.1 structure is nested deeper than %s levels", MAX_NESTING_DEPTH);
-        }
+        checkFormat(depth[0] < MAX_NESTING_DEPTH, "ASN.1 structure is nested deeper than %s levels", MAX_NESTING_DEPTH);
         depth[0]++;
         try {
             ASN1Tag tag = decoder.readTag(this);
