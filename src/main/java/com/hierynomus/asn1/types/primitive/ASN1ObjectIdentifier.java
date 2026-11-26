@@ -15,27 +15,44 @@
  */
 package com.hierynomus.asn1.types.primitive;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.StringTokenizer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
 import com.hierynomus.asn1.ASN1OutputStream;
+import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-import static com.hierynomus.asn1.util.Checks.checkArgument;
-
+/**
+ * ASN.1 OBJECT IDENTIFIER (UNIVERSAL 6), in dotted notation, e.g. {@code 1.2.840.113549}.
+ * <p>
+ * Encoded as in X.690 8.19: the first two arcs X.Y are combined into a single subidentifier {@code 40 * X + Y}, and
+ * every subidentifier is encoded in base 128, most significant group first, with bit 8 set on all but the last octet.
+ * Arcs can be arbitrarily large (e.g. UUID based {@code 2.25.*} identifiers).
+ */
 public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
+    // Canonical dotted notation: at least two arcs, no empty arcs, signs or leading zeros
+    private static final Pattern DOTTED = Pattern.compile("(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))+");
+    private static final BigInteger FORTY = BigInteger.valueOf(40);
+    private static final BigInteger EIGHTY = BigInteger.valueOf(80);
 
-    private String oid;
+    private final String oid;
 
+    /**
+     * @param oid the object identifier in dotted notation
+     * @throws IllegalArgumentException if the value is not a valid object identifier (X.680 32.3, X.690 8.19.4):
+     * at least two arcs, the first being 0, 1 or 2, and the second being below 40 if the first is 0 or 1
+     */
     public ASN1ObjectIdentifier(String oid) {
         super(ASN1Tag.OBJECT_IDENTIFIER);
-        this.oid = oid;
+        this.oid = checkValid(oid);
     }
 
     private ASN1ObjectIdentifier(byte[] valueBytes, String oid) {
@@ -53,6 +70,22 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
         return oid.hashCode();
     }
 
+    private static String checkValid(String oid) {
+        if (oid == null || !DOTTED.matcher(oid).matches()) {
+            throw new IllegalArgumentException("Not a valid ASN.1 OBJECT IDENTIFIER: '" + oid + "'");
+        }
+        String[] arcs = oid.split("\\.", 3);
+        BigInteger first = new BigInteger(arcs[0]);
+        BigInteger second = new BigInteger(arcs[1]);
+        if (first.compareTo(BigInteger.valueOf(2)) > 0) {
+            throw new IllegalArgumentException("The first arc of an ASN.1 OBJECT IDENTIFIER must be 0, 1 or 2: '" + oid + "'");
+        }
+        if (first.compareTo(BigInteger.valueOf(2)) < 0 && second.compareTo(FORTY) >= 0) {
+            throw new IllegalArgumentException("The second arc of an ASN.1 OBJECT IDENTIFIER must be below 40 under 0 and 1: '" + oid + "'");
+        }
+        return oid;
+    }
+
     public static class Parser extends ASN1Parser<ASN1ObjectIdentifier> {
         public Parser(ASN1Decoder decoder) {
             super(decoder);
@@ -60,24 +93,40 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
 
         @Override
         public ASN1ObjectIdentifier parse(ASN1Tag<ASN1ObjectIdentifier> asn1Tag, byte[] value) {
-            checkArgument(value.length > 0, "An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
-            ByteArrayInputStream is = new ByteArrayInputStream(value);
-            StringBuilder b = new StringBuilder();
-            int firstTwo = is.read();
-            b.append(firstTwo / 40);
-            b.append('.').append(firstTwo % 40);
-            while (is.available() > 0) {
-                int x = is.read();
-                if (x < 127) {
-                    b.append('.').append(x);
-                } else {
-                    BigInteger v = BigInteger.valueOf(x & 0x7f);
-                    do {
-                        x = is.read();
-                        v = v.shiftLeft(7).add(BigInteger.valueOf(x & 0x7f));
-                    } while (x > 127);
-                    b.append('.').append(v);
+            if (value.length == 0) {
+                throw new ASN1ParseException("An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
+            }
+            List<BigInteger> subidentifiers = new ArrayList<>();
+            int i = 0;
+            while (i < value.length) {
+                if ((value[i] & 0xff) == 0x80) {
+                    // X.690 8.19.2: a subidentifier shall be encoded in the fewest possible octets
+                    throw new ASN1ParseException("Non-minimal subidentifier encoding in ASN.1 OBJECT IDENTIFIER at offset %s", i);
                 }
+                BigInteger subidentifier = BigInteger.ZERO;
+                int b;
+                do {
+                    if (i >= value.length) {
+                        throw new ASN1ParseException("Truncated subidentifier in ASN.1 OBJECT IDENTIFIER");
+                    }
+                    b = value[i++] & 0xff;
+                    subidentifier = subidentifier.shiftLeft(7).or(BigInteger.valueOf(b & 0x7f));
+                } while ((b & 0x80) != 0);
+                subidentifiers.add(subidentifier);
+            }
+
+            // X.690 8.19.4: the first subidentifier combines the first two arcs as 40 * X + Y, where Y < 40 if X < 2
+            StringBuilder b = new StringBuilder();
+            BigInteger first = subidentifiers.get(0);
+            if (first.compareTo(FORTY) < 0) {
+                b.append("0.").append(first);
+            } else if (first.compareTo(EIGHTY) < 0) {
+                b.append("1.").append(first.subtract(FORTY));
+            } else {
+                b.append("2.").append(first.subtract(EIGHTY));
+            }
+            for (int j = 1; j < subidentifiers.size(); j++) {
+                b.append('.').append(subidentifiers.get(j));
             }
             return new ASN1ObjectIdentifier(value, b.toString());
         }
@@ -97,29 +146,24 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
         }
 
         private void calculateBytes(final ASN1ObjectIdentifier asn1Object) {
-            String oid = asn1Object.oid;
+            String[] arcs = asn1Object.oid.split("\\.");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            StringTokenizer tokenizer = new StringTokenizer(oid, ".");
-            int first = Integer.parseInt(tokenizer.nextToken());
-            int second = Integer.parseInt(tokenizer.nextToken());
-            baos.write(first * 40 + second);
-            while (tokenizer.hasMoreTokens()) {
-                BigInteger token = new BigInteger(tokenizer.nextToken());
-                if (token.intValue() > 0 && token.intValue() < 127) {
-                    baos.write(token.intValue());
-                } else {
-                    int neededBytes = token.bitLength() / 7 + ((token.bitLength() % 7 > 0) ? 1 : 0);
-                    for (int i = neededBytes - 1; i >= 0; i--) {
-                        byte b = token.shiftRight(i * 7).byteValue();
-                        b &= 0x7f;
-                        if (i > 0) {
-                            b |= 0x80;
-                        }
-                        baos.write(b);
-                    }
-                }
+            writeSubidentifier(baos, new BigInteger(arcs[0]).multiply(FORTY).add(new BigInteger(arcs[1])));
+            for (int i = 2; i < arcs.length; i++) {
+                writeSubidentifier(baos, new BigInteger(arcs[i]));
             }
             asn1Object.valueBytes = baos.toByteArray();
+        }
+
+        /**
+         * Base 128, most significant group first, bit 8 set on all but the last octet (X.690 8.19.2).
+         */
+        private static void writeSubidentifier(ByteArrayOutputStream baos, BigInteger subidentifier) {
+            int groups = Math.max(1, (subidentifier.bitLength() + 6) / 7);
+            for (int i = groups - 1; i >= 0; i--) {
+                int group = subidentifier.shiftRight(i * 7).intValue() & 0x7f;
+                baos.write(i > 0 ? group | 0x80 : group);
+            }
         }
 
         @Override
@@ -130,5 +174,4 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
             stream.write(asn1Object.valueBytes);
         }
     }
-
 }
