@@ -1,6 +1,0 @@
-exclude:
-- /build.gradle
-component_depth: 1
-languages:
-- groovy
-- java
