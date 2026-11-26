@@ -140,7 +140,7 @@ publishing {
 }
 
 project.signing {
-  required = { project.gradle.taskGraph.hasTask("release") }
+  required = { project.gradle.taskGraph.allTasks.any { it.name in ["release", "publishToSonatype"] } }
 	sign publishing.publications.maven
 
   if (project.hasProperty("signingKeyId") || project.hasProperty("signingKey")) {
@@ -186,7 +186,11 @@ project.plugins.withType(MavenPublishPlugin).all {
 
 nexusPublishing {
 	repositories {
-		sonatype()    //sonatypeUsername and sonatypePassword properties are used automatically
+		// sonatypeUsername and sonatypePassword (Central Portal user token) properties are used automatically
+		sonatype {
+			nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+			snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+		}
 	}
 
 	connectTimeout = Duration.ofMinutes(3)
