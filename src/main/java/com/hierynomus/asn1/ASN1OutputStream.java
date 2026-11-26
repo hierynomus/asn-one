@@ -51,7 +51,8 @@ public class ASN1OutputStream extends FilterOutputStream {
     }
 
     private void writeLength(final int length) throws IOException {
-        if (length < 0x7f) {
+        if (length <= 0x7f) {
+            // Short form for lengths up to 127 (X.690 8.1.3.4), mandatory in DER (X.690 10.1)
             write(length);
         } else {
             int nrBytes = lengthBytes(length);

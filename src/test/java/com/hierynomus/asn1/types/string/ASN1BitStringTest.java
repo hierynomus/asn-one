@@ -154,6 +154,32 @@ class ASN1BitStringTest {
         assertThrows(ASN1ParseException.class, is::readObject);
     }
 
+    static Stream<Arguments> octetAlignedBitStrings() {
+        boolean[] eight = {true, true, true, true, true, true, true, true};
+        boolean[] sixteen = {true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true};
+        BitSet eightSet = new BitSet();
+        eightSet.set(0, 8);
+        return Stream.of(
+            // X.690 8.6.2.2: the number of unused bits is 0-7, so a multiple of 8 bits has none
+            arguments("boolean[0]", new ASN1BitString(new boolean[0]), bytes(0x03, 0x01, 0x00)),
+            arguments("boolean[8]", new ASN1BitString(eight), bytes(0x03, 0x02, 0x00, 0xff)),
+            arguments("boolean[16]", new ASN1BitString(sixteen), bytes(0x03, 0x03, 0x00, 0x80, 0x01)),
+            arguments("empty BitSet", new ASN1BitString(new BitSet()), bytes(0x03, 0x01, 0x00)),
+            arguments("BitSet of 8 bits", new ASN1BitString(eightSet), bytes(0x03, 0x02, 0x00, 0xff)));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("octetAlignedBitStrings")
+    void shouldWriteOctetAlignedBitStringWithoutUnusedBits(String description, ASN1BitString bitString, byte[] expected) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        new ASN1OutputStream(new DEREncoder(), baos).writeObject(bitString);
+
+        assertArrayEquals(expected, baos.toByteArray());
+        ASN1BitString read = new ASN1InputStream(new BERDecoder(), expected).readObject();
+        assertEquals(bitString.length(), read.length());
+    }
+
     private static boolean[] toBooleans(int[] bits) {
         boolean[] result = new boolean[bits.length];
         for (int i = 0; i < bits.length; i++) {
