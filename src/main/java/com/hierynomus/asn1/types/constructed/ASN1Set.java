@@ -17,9 +17,12 @@ package com.hierynomus.asn1.types.constructed;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.List;
 import com.hierynomus.asn1.*;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
@@ -27,28 +30,78 @@ import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Constructed {
-    private final Set<ASN1Object> objects;
+/**
+ * ASN.1 SET and SET OF (UNIVERSAL 17).
+ * <p>
+ * A SET OF value is an unordered collection that may contain duplicates (X.680 clause 28), so the elements are kept
+ * as a list: a parsed SET keeps its elements, including duplicates, in the order they were received.
+ * {@link #equals(Object)} ignores the order of the elements, but not how often each occurs.
+ * <p>
+ * Encoding:
+ * <ul>
+ * <li>A parsed SET is re-encoded with its original contents, so signatures over a received SET (e.g. CMS signed
+ * attributes) remain valid, even if the sender did not order the elements canonically.</li>
+ * <li>A SET constructed in code is encoded with its elements sorted by their encodings, as DER requires for
+ * SET OF (X.690 11.6). As this library has no schema, it cannot distinguish a SET from a SET OF; for a SET DER
+ * orders by tag instead (X.690 10.3), which only differs when components of the same tag class have a different
+ * primitive/constructed form.</li>
+ * </ul>
+ */
+public class ASN1Set extends ASN1Object<List<ASN1Object>> implements ASN1Constructed {
+    private final List<ASN1Object> objects;
     private byte[] bytes;
 
-    private ASN1Set(Set<ASN1Object> objects, byte[] bytes) {
+    private ASN1Set(List<ASN1Object> objects, byte[] bytes) {
         super(ASN1Tag.SET);
         this.objects = objects;
         this.bytes = bytes;
     }
 
-    public ASN1Set(Set<ASN1Object> objects) {
+    /**
+     * @param objects the elements of the SET, duplicates are kept
+     */
+    public ASN1Set(Collection<? extends ASN1Object> objects) {
         super(ASN1Tag.SET);
-        this.objects = new HashSet<>(objects);
+        this.objects = new ArrayList<ASN1Object>(objects);
     }
 
+    /**
+     * @return a copy of the elements, in the order they were received or added
+     */
     @Override
-    public Set<ASN1Object> getValue() {
-        return new HashSet<>(objects);
+    public List<ASN1Object> getValue() {
+        return new ArrayList<>(objects);
     }
 
     public Iterator<ASN1Object> iterator() {
-        return new HashSet<>(objects).iterator();
+        return new ArrayList<>(objects).iterator();
+    }
+
+    public int size() {
+        return objects.size();
+    }
+
+    /**
+     * Two SETs are equal if they contain the same elements the same number of times, in any order.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ASN1Set)) return false;
+        ASN1Set that = (ASN1Set) o;
+        if (!tag.equals(that.tag) || objects.size() != that.objects.size()) return false;
+        List<ASN1Object> remaining = new ArrayList<>(that.objects);
+        for (ASN1Object object : objects) {
+            if (!remaining.remove(object)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     public static class Parser extends ASN1Parser<ASN1Set> {
@@ -58,7 +111,7 @@ public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Construc
 
         @Override
         public ASN1Set parse(ASN1Tag<ASN1Set> asn1Tag, byte[] value) throws ASN1ParseException {
-            HashSet<ASN1Object> asn1Objects = new HashSet<>();
+            List<ASN1Object> asn1Objects = new ArrayList<>();
             try (ASN1InputStream stream = new ASN1InputStream(decoder, value)) {
                 for (ASN1Object asn1Object : stream) {
                     asn1Objects.add(asn1Object);
@@ -72,6 +125,23 @@ public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Construc
     }
 
     public static class Serializer extends ASN1Serializer<ASN1Set> {
+        /**
+         * X.690 11.6: ascending order, comparing as octet strings with the shorter one padded with trailing 0-octets.
+         */
+        private static final Comparator<byte[]> DER_ORDER = new Comparator<byte[]>() {
+            @Override
+            public int compare(byte[] a, byte[] b) {
+                for (int i = 0; i < Math.max(a.length, b.length); i++) {
+                    int x = i < a.length ? a[i] & 0xff : 0;
+                    int y = i < b.length ? b[i] & 0xff : 0;
+                    if (x != y) {
+                        return x - y;
+                    }
+                }
+                return 0;
+            }
+        };
+
         public Serializer(final ASN1Encoder encoder) {
             super(encoder);
         }
@@ -85,24 +155,26 @@ public class ASN1Set extends ASN1Object<Set<ASN1Object>> implements ASN1Construc
         }
 
         private void calculateBytes(final ASN1Set asn1Object) throws IOException {
+            List<byte[]> encodings = new ArrayList<>(asn1Object.objects.size());
+            for (ASN1Object object : asn1Object.objects) {
+                ByteArrayOutputStream element = new ByteArrayOutputStream();
+                new ASN1OutputStream(encoder, element).writeObject(object);
+                encodings.add(element.toByteArray());
+            }
+            Collections.sort(encodings, DER_ORDER);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, out);
-            for (ASN1Object object : asn1Object) {
-                asn1OutputStream.writeObject(object);
+            for (byte[] encoding : encodings) {
+                out.write(encoding);
             }
             asn1Object.bytes = out.toByteArray();
         }
 
         @Override
         public void serialize(final ASN1Set asn1Object, final ASN1OutputStream stream) throws IOException {
-            if (asn1Object.bytes != null) {
-                stream.write(asn1Object.bytes);
-            } else {
-                for (ASN1Object object : asn1Object) {
-                    stream.writeObject(object);
-                }
+            if (asn1Object.bytes == null) {
+                calculateBytes(asn1Object);
             }
+            stream.write(asn1Object.bytes);
         }
     }
-
 }
