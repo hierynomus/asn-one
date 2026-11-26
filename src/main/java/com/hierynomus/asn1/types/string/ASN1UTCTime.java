@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -121,7 +122,7 @@ public class ASN1UTCTime extends ASN1CharacterString {
         if (year < 1950 || year > 2049) {
             throw new IllegalArgumentException("ASN.1 UTCTime can only represent the years 1950-2049, not " + year);
         }
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMddHHmmss'Z'");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMddHHmmss'Z'", Locale.ROOT);
         dateFormat.setTimeZone(UTC);
         return dateFormat.format(date);
     }
