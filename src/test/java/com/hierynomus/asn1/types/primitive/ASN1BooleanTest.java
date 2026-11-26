@@ -49,7 +49,7 @@ class ASN1BooleanTest {
     static Stream<Arguments> booleansToWrite() {
         return Stream.of(
             arguments(new ASN1Boolean(false), bytes(0x01, 0x01, 0x00)),
-            arguments(new ASN1Boolean(true), bytes(0x01, 0x01, 0x01)));
+            arguments(new ASN1Boolean(true), bytes(0x01, 0x01, 0xFF)));   // DER: TRUE is all ones (X.690 11.1)
     }
 
     @ParameterizedTest(name = "{0}")

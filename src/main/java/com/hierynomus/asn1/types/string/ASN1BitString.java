@@ -44,7 +44,8 @@ public class ASN1BitString extends ASN1String<boolean[]> {
     public ASN1BitString(boolean[] bits) {
         super(ASN1Tag.BIT_STRING, constructBytes(bits));
         this.bits = bits;
-        this.unusedBits = 8 - (bits.length % 8);
+        // 0-7 unused bits in the last octet (X.690 8.6.2.2)
+        this.unusedBits = (8 - bits.length % 8) % 8;
     }
 
     /**
@@ -70,7 +71,7 @@ public class ASN1BitString extends ASN1String<boolean[]> {
     }
 
     private static byte[] constructBytes(BitSet bitSet) {
-        byte[] bytes = new byte[bitSet.length() / 8 + 1];
+        byte[] bytes = new byte[(bitSet.length() + 7) / 8];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = 0;
             for (int j = 0; j < 8; j++) {

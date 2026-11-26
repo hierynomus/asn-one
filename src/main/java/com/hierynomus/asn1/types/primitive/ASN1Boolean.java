@@ -72,7 +72,8 @@ public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
 
         @Override
         public void serialize(final ASN1Boolean asn1Object, final ASN1OutputStream stream) throws IOException {
-            stream.write(asn1Object.value ? 0x01 : 0x00);
+            // DER: TRUE is encoded as all ones (X.690 11.1); BER readers accept any non-zero value
+            stream.write(asn1Object.value ? 0xFF : 0x00);
         }
     }
 
