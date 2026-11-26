@@ -58,6 +58,10 @@ public class ASN1OctetString extends ASN1String<byte[]> {
 
         @Override
         public ASN1OctetString parse(ASN1Tag<ASN1OctetString> asn1Tag, byte[] value) throws ASN1ParseException {
+            if (asn1Tag.isConstructed()) {
+                // Normalise to the primitive form, which is how the joined contents will be serialized (X.690 10.2).
+                return new ASN1OctetString(asn1Tag.primitive(), joinSegments(decoder, ASN1Tag.OCTET_STRING.getTag(), value));
+            }
             return new ASN1OctetString(asn1Tag, value);
         }
     }

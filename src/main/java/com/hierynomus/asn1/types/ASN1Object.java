@@ -15,6 +15,8 @@
  */
 package com.hierynomus.asn1.types;
 
+import java.util.Objects;
+
 public abstract class ASN1Object<T> {
 
     protected ASN1Tag tag;
@@ -32,8 +34,9 @@ public abstract class ASN1Object<T> {
 
         ASN1Object that = (ASN1Object) o;
 
-        if (tag != that.tag) return false;
-        return getValue() != null ? getValue().equals(that.getValue()) : that.getValue() == null;
+        if (!tag.equals(that.tag)) return false;
+        // deepEquals, as the value of several types (e.g. OCTET STRING, BIT STRING) is an array
+        return Objects.deepEquals(getValue(), that.getValue());
 
     }
 

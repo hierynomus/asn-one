@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types.string;
 
 import com.hierynomus.asn1.ASN1InputStream;
 import com.hierynomus.asn1.ASN1OutputStream;
+import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import com.hierynomus.asn1.encodingrules.der.DEREncoder;
 import com.hierynomus.asn1.types.ASN1Encoding;
@@ -37,6 +38,7 @@ import static com.hierynomus.asn1.Bytes.bytes;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class ASN1BitStringTest {
@@ -131,13 +133,25 @@ class ASN1BitStringTest {
     }
 
     @Test
-    void shouldRetainConstructedEncoding() {
+    void shouldParseConstructedBitStringAndReEncodeAsPrimitive() throws IOException {
         ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes(0x23, 0x09, 0x03, 0x03, 0x0, 0xF0, 0xF0, 0x03, 0x02, 0x02, 0xF4));
 
-        ASN1Object<?> object = is.readObject();
+        ASN1BitString bitString = assertInstanceOf(ASN1BitString.class, is.readObject());
 
-        assertEquals(ASN1Encoding.CONSTRUCTED, object.getTag().getAsn1Encoding());
-        assertEquals(22, ((ASN1BitString) object).length());
+        assertEquals(22, bitString.length());
+        assertArrayEquals(toBooleans(BITS_22), bitString.getValue());
+        // DER only allows the primitive form (X.690 10.2)
+        assertEquals(ASN1Encoding.PRIMITIVE, bitString.getTag().getAsn1Encoding());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new ASN1OutputStream(new DEREncoder(), baos).writeObject(bitString);
+        assertArrayEquals(bytes(0x03, 0x04, 0x02, 0xF0, 0xF0, 0xF4), baos.toByteArray());
+    }
+
+    @Test
+    void shouldRejectConstructedBitStringWithNonBitStringSegment() {
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes(0x23, 0x04, 0x04, 0x02, 0x00, 0xF0));
+
+        assertThrows(ASN1ParseException.class, is::readObject);
     }
 
     private static boolean[] toBooleans(int[] bits) {
