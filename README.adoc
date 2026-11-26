@@ -31,6 +31,25 @@ If you're building your project using Maven, you can add the following dependenc
 
 If your project is built using another build tool that uses the Maven Central repository, translate this dependency into the format used by your build tool.
 
+== Reading ASN.1
+Input must be BER or DER encoded. PEM files (`-----BEGIN ...-----`) need to be Base64 decoded first.
+
+[source,java]
+----
+ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes);
+ASN1Sequence certificate = is.readObject();
+----
+
+By default, decoding is strict: an object with a UNIVERSAL tag that asn-one has no specific type for causes an `ASN1ParseException`, so a successful parse means every object was understood.
+To read any well-formed structure instead, use a lenient decoder, which keeps such objects as an `ASN1UnknownObject` with their raw contents:
+
+[source,java]
+----
+ASN1InputStream is = new ASN1InputStream(BERDecoder.lenient(), bytes);
+----
+
+The setting also applies to tagged objects whose contents are decoded later on, through `ASN1TaggedObject.getObject()`.
+
 == Building asn-one
 Building requires JDK 17 or newer. The library itself targets Java 8, so it can be used on any Java 8+ runtime.
 
