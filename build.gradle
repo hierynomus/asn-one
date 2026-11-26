@@ -4,13 +4,11 @@ plugins {
   id "jacoco"
   id "maven-publish"
   id "signing"
-  id 'pl.allegro.tech.build.axion-release' version '1.13.3'
+  id 'pl.allegro.tech.build.axion-release' version '1.21.2'
   id "com.github.hierynomus.license" version "0.16.1"
-  id 'ru.vyarus.github-info' version '1.2.0'
-  id 'ru.vyarus.animalsniffer' version '1.5.3'
-  id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
-  id "org.moditect.gradleplugin" version "1.0.0-rc3"
-  id "biz.aQute.bnd.builder" version "6.4.0"
+  id 'ru.vyarus.github-info' version '2.0.0'
+  id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
+  id "biz.aQute.bnd.builder" version "7.3.0"
 }
 
 repositories {
@@ -18,25 +16,31 @@ repositories {
 }
 
 group = "com.hierynomus"
-defaultTasks = ["build"]
+defaultTasks "build"
 
 ext {
   moduleName = "${project.group}.${project.name.replaceAll("-", "")}"
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+compileJava {
+  // Keep producing Java 7 bytecode; --release also verifies we only use the Java 7 API.
+  options.release = 7
+}
+
+compileTestJava {
+  options.release = 17
+}
 
 configurations.implementation.transitive = false
 
 dependencies {
-  signature 'org.codehaus.mojo.signature:java17:1.0@signature'
-
-  implementation "org.slf4j:slf4j-api:1.7.13"
-  testImplementation 'org.spockframework:spock-core:1.0-groovy-2.4'
-  testImplementation 'commons-io:commons-io:2.5'
-  testImplementation 'javax.xml.bind:jaxb-api:2.3.0'
-  testRuntimeOnly 'ch.qos.logback:logback-classic:1.1.3'
+  implementation "org.slf4j:slf4j-api:1.7.36"
+  testImplementation platform('org.junit:junit-bom:5.13.4')
+  testImplementation 'org.apache.groovy:groovy:4.0.30'
+  testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
+  testImplementation 'javax.xml.bind:jaxb-api:2.3.1'
+  testRuntimeOnly 'ch.qos.logback:logback-classic:1.2.13'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 license {
@@ -45,7 +49,7 @@ license {
     java = 'SLASHSTAR_STYLE'
     groovy = 'SLASHSTAR_STYLE'
   }
-  strictCheck true
+  strictCheck = true
 }
 
 scmVersion {
@@ -61,18 +65,20 @@ scmVersion {
 
 project.version = scmVersion.version
 
-addMainModuleInfo {
-  version = project.version
-  jvmVersion = '9'
-  overwriteExistingFiles = true
-  module {
-    moduleInfo {
-      name = project.moduleName
-      exports = '''
-        *;
-      '''
+// Explicit module descriptor, packaged as a multi-release jar entry so the main code stays Java 7 compatible.
+sourceSets {
+  java9 {
+    java {
+      srcDirs = ['src/main/java9']
     }
   }
+}
+
+tasks.named('compileJava9Java', JavaCompile) {
+  options.release = 9
+  classpath = configurations.compileClasspath
+  options.compilerArgs += ['--patch-module', "${project.moduleName}=${sourceSets.main.java.classesDirectory.get().asFile}"]
+  dependsOn compileJava
 }
 
 java {
@@ -81,6 +87,12 @@ java {
 }
 
 jar {
+  into('META-INF/versions/9') {
+    from sourceSets.java9.output
+  }
+  manifest {
+    attributes 'Multi-Release': 'true'
+  }
   // Add minimal OSGi metadata.
   // We are using slf4j as a client, so can use also 2.x API.
   bundle {
@@ -100,23 +112,30 @@ if (JavaVersion.current().isJava8Compatible()) {
   }
 }
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
+  useJUnitPlatform()
   include "**/*Test.*"
   include "**/*Spec.*"
-  afterSuite { descriptor, result ->
-    def indicator = "\u001B[32m✓\u001b[0m"
-    if (result.failedTestCount > 0) {
-      indicator = "\u001B[31m✘\u001b[0m"
+  def testLogger = logger
+  addTestListener(new TestListener() {
+    void beforeSuite(TestDescriptor suite) {}
+    void beforeTest(TestDescriptor test) {}
+    void afterTest(TestDescriptor test, TestResult result) {}
+    void afterSuite(TestDescriptor suite, TestResult result) {
+      def indicator = "\u001B[32m✓\u001b[0m"
+      if (result.failedTestCount > 0) {
+        indicator = "\u001B[31m✘\u001b[0m"
+      }
+      testLogger.lifecycle("$indicator Test ${suite.name}; Executed: ${result.testCount}/\u001B[32m${result.successfulTestCount}\u001B[0m/\u001B[31m${result.failedTestCount}\u001B[0m")
     }
-    logger.lifecycle("$indicator Test ${descriptor.name}; Executed: ${result.testCount}/\u001B[32m${result.successfulTestCount}\u001B[0m/\u001B[31m${result.failedTestCount}\u001B[0m")
-  }
+  })
 }
 
 project.tasks.compileGroovy.onlyIf { false }
 
 github {
-  user 'hierynomus'
-  license 'Apache'
+  user = 'hierynomus'
+  license = 'Apache'
 }
 
 publishing {
@@ -128,7 +147,7 @@ publishing {
 }
 
 project.signing {
-  required { project.gradle.taskGraph.hasTask("release") }
+  required = { project.gradle.taskGraph.hasTask("release") }
 	sign publishing.publications.maven
 
   if (project.hasProperty("signingKeyId") || project.hasProperty("signingKey")) {
@@ -183,18 +202,12 @@ nexusPublishing {
 
 jacocoTestReport {
     reports {
-        xml.enabled true
-        html.enabled true
+        xml.required = true
+        html.required = true
     }
 }
 
-task forkedUploadRelease(type: GradleBuild) {
-  buildFile = project.buildFile
-  tasks = ["clean","currentVersion","publishToSonatype", "closeAndReleaseSonatypeStagingRepository"]
-}
-
 project.tasks.release.dependsOn([project.tasks.build])
-project.tasks.release.finalizedBy(project.tasks.forkedUploadRelease)
 
 project.tasks.jacocoTestReport.dependsOn(project.tasks.test)
 project.tasks.check.dependsOn(project.tasks.jacocoTestReport)
