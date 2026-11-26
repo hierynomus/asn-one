@@ -138,7 +138,10 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         if (object != null && object.getTag().equals(tag)) {
             return (T) object;
         } else  if (object == null && bytes != null) {
-            return tag.newParser(decoder).parse(tag, bytes);
+            // For an implicitly tagged object, the encoding (primitive/constructed) of the outer tag is that of the
+            // underlying type, so the parser needs to know about it (e.g. [0] IMPLICIT OCTET STRING, constructed).
+            ASN1Tag<T> encodedTag = tag.getSupportedEncodings().contains(this.tag.getAsn1Encoding()) ? tag.asEncoded(this.tag.getAsn1Encoding()) : tag;
+            return encodedTag.newParser(decoder).parse(encodedTag, bytes);
         }
         throw new ASN1ParseException("Unable to parse the implicit Tagged Object with %s, it is explicit", tag);
     }

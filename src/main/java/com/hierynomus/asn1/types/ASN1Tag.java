@@ -69,13 +69,13 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             return new ASN1BitString.Serializer(encoder);
         }
     };
-    public static final ASN1Tag<?> OCTET_STRING = new ASN1Tag(UNIVERSAL, 0x04, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+    public static final ASN1Tag<ASN1OctetString> OCTET_STRING = new ASN1Tag<ASN1OctetString>(UNIVERSAL, 0x04, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
         @Override
-        public ASN1Parser<?> newParser(ASN1Decoder decoder) {
+        public ASN1Parser<ASN1OctetString> newParser(ASN1Decoder decoder) {
             return new ASN1OctetString.Parser(decoder);
         }
         @Override
-        public ASN1Serializer newSerializer(ASN1Encoder encoder) {
+        public ASN1Serializer<ASN1OctetString> newSerializer(ASN1Encoder encoder) {
             return new ASN1OctetString.Serializer(encoder);
         }
     };
@@ -258,7 +258,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        // Not getClass(): every tag is an anonymous subclass, also those derived via asEncoded()
+        if (!(o instanceof ASN1Tag)) return false;
         ASN1Tag asn1Tag = (ASN1Tag) o;
         return getTag() == asn1Tag.getTag() &&
             asn1TagClass == asn1Tag.asn1TagClass &&

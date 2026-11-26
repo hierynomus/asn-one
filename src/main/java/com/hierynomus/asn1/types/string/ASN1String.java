@@ -15,9 +15,14 @@
  */
 package com.hierynomus.asn1.types.string;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import com.hierynomus.asn1.ASN1InputStream;
+import com.hierynomus.asn1.ASN1ParseException;
+import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import com.hierynomus.asn1.types.*;
 
@@ -46,4 +51,54 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
     }
 
     public abstract int length();
+
+    /**
+     * Maximum nesting depth accepted for constructed string segments, protecting against stack exhaustion on
+     * malicious input.
+     */
+    private static final int MAX_SEGMENT_DEPTH = 32;
+
+    /**
+     * Concatenates the contents of a constructed string encoding into the contents of the equivalent primitive
+     * encoding.
+     * <p>
+     * Per X.690 8.7.3 and 8.23.6 the segments of a constructed OCTET STRING or restricted character string are
+     * themselves OCTET STRING encodings (UNIVERSAL 4), which may again be constructed. To be lenient towards encoders
+     * in the wild, segments tagged with the string's own universal tag are accepted as well.
+     *
+     * @param decoder the decoder to read the segments with
+     * @param universalTag the universal tag number of the string type being decoded
+     * @param value the contents octets of the constructed encoding
+     * @return the concatenated contents of all segments
+     */
+    protected static byte[] joinSegments(ASN1Decoder decoder, int universalTag, byte[] value) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        appendSegments(decoder, universalTag, value, out, 1);
+        return out.toByteArray();
+    }
+
+    private static void appendSegments(ASN1Decoder decoder, int universalTag, byte[] value, ByteArrayOutputStream out, int depth) {
+        if (depth > MAX_SEGMENT_DEPTH) {
+            throw new ASN1ParseException("Constructed string segments nested deeper than %s levels", MAX_SEGMENT_DEPTH);
+        }
+        try (ASN1InputStream stream = new ASN1InputStream(decoder, value)) {
+            while (stream.available() > 0) {
+                ASN1Tag<?> segmentTag = stream.readTag();
+                if (segmentTag.getAsn1TagClass() != ASN1TagClass.UNIVERSAL
+                    || (segmentTag.getTag() != ASN1Tag.OCTET_STRING.getTag() && segmentTag.getTag() != universalTag)) {
+                    throw new ASN1ParseException("Expected an OCTET STRING segment in constructed string encoding, got: %s", segmentTag);
+                }
+                byte[] segment = stream.readValue(stream.readLength());
+                if (segmentTag.isConstructed()) {
+                    appendSegments(decoder, universalTag, segment, out, depth + 1);
+                } else {
+                    out.write(segment);
+                }
+            }
+        } catch (ASN1ParseException e) {
+            throw e;
+        } catch (IOException | RuntimeException e) {
+            throw new ASN1ParseException(e, "Unable to parse constructed string segments");
+        }
+    }
 }

@@ -23,6 +23,7 @@ import com.hierynomus.asn1.*;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
+import com.hierynomus.asn1.types.ASN1TagClass;
 import com.hierynomus.asn1.util.Checks;
 
 public class ASN1BitString extends ASN1String<boolean[]> {
@@ -132,7 +133,9 @@ public class ASN1BitString extends ASN1String<boolean[]> {
                     int unusedBits = 0;
                     while (stream.available() > 0) {
                         ASN1Tag subTag = stream.readTag();
-                        Checks.checkState(subTag.getTag() == asn1Tag.getTag(), "Expected an ASN.1 BIT STRING as Constructed object, got: %s", subTag);
+                        // Segments are always UNIVERSAL BIT STRINGs (X.690 8.6.4), also when the outer tag is implicit.
+                        Checks.checkState(subTag.getAsn1TagClass() == ASN1TagClass.UNIVERSAL && subTag.getTag() == ASN1Tag.BIT_STRING.getTag() && !subTag.isConstructed(),
+                            "Expected a primitive ASN.1 BIT STRING segment in Constructed object, got: %s", subTag);
                         int i = stream.readLength();
                         byte[] subValue = stream.readValue(i);
                         baos.write(subValue, 1, subValue.length - 1);
@@ -141,8 +144,9 @@ public class ASN1BitString extends ASN1String<boolean[]> {
                             unusedBits = subValue[0];
                         }
                     }
-                    return new ASN1BitString(asn1Tag, baos.toByteArray(), unusedBits);
-                } catch (IOException e) {
+                    // Normalise to the primitive form, which is how the joined contents will be serialized (X.690 10.2).
+                    return new ASN1BitString(asn1Tag.primitive(), baos.toByteArray(), unusedBits);
+                } catch (IOException | IllegalStateException e) {
                     throw new ASN1ParseException(e, "Unable to parse Constructed ASN.1 BIT STRING");
                 }
             } else {
