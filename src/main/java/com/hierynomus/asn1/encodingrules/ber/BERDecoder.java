@@ -20,12 +20,49 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Encoding;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
+import com.hierynomus.asn1.types.ASN1UnknownObject;
 import com.hierynomus.asn1.types.ASN1TagClass;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Decoder for the Basic Encoding Rules (X.690).
+ * <p>
+ * By default the decoder is strict: an object with a UNIVERSAL tag that this library has no specific type for causes
+ * an {@link ASN1ParseException}, so a successful parse guarantees every object was understood. A {@link #lenient()}
+ * decoder instead keeps such objects as an {@link ASN1UnknownObject}, which allows reading any well-formed structure,
+ * e.g. certificates containing BMPStrings. The setting also applies to objects decoded later on, such as the contents
+ * of an {@link com.hierynomus.asn1.types.constructed.ASN1TaggedObject}.
+ */
 public class BERDecoder implements ASN1Decoder {
+    private final boolean lenient;
+
+    public BERDecoder() {
+        this(false);
+    }
+
+    protected BERDecoder(boolean lenient) {
+        this.lenient = lenient;
+    }
+
+    /**
+     * @return a decoder that keeps objects with an unknown UNIVERSAL tag as {@link ASN1UnknownObject} instead of failing
+     */
+    public static BERDecoder lenient() {
+        return new BERDecoder(true);
+    }
+
+    /**
+     * @return whether objects with an unknown UNIVERSAL tag are kept as {@link ASN1UnknownObject} instead of failing
+     */
+    public boolean isLenient() {
+        return lenient;
+    }
+
+    private ASN1Tag<?> lookupTag(ASN1TagClass asn1TagClass, int tag) {
+        return lenient ? ASN1Tag.forTagOrUnknown(asn1TagClass, tag) : ASN1Tag.forTag(asn1TagClass, tag);
+    }
 
     @Override
     public ASN1Tag<? extends ASN1Object> readTag(InputStream is) {
@@ -39,7 +76,7 @@ public class BERDecoder implements ASN1Decoder {
             int tag = tagByte & 0x1f;
 
             if (tag <= 0x1e) {
-                return ASN1Tag.forTag(asn1TagClass, tag).asEncoded(asn1Encoding);
+                return lookupTag(asn1TagClass, tag).asEncoded(asn1Encoding);
             } else {
                 int iTag = 0;
                 int read = is.read();
@@ -59,7 +96,7 @@ public class BERDecoder implements ASN1Decoder {
 
                 iTag |= (read & 0x7f);
 
-                return ASN1Tag.forTag(asn1TagClass, iTag).asEncoded(asn1Encoding);
+                return lookupTag(asn1TagClass, iTag).asEncoded(asn1Encoding);
             }
         } catch (IOException ioe) {
             throw new ASN1ParseException("Unable to parse ASN.1 tag", ioe);

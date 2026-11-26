@@ -18,4 +18,20 @@ package com.hierynomus.asn1.encodingrules.der;
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 
 public class DERDecoder extends BERDecoder {
+
+    public DERDecoder() {
+        super(false);
+    }
+
+    protected DERDecoder(boolean lenient) {
+        super(lenient);
+    }
+
+    /**
+     * @return a decoder that keeps objects with an unknown UNIVERSAL tag as an
+     * {@link com.hierynomus.asn1.types.ASN1UnknownObject} instead of failing
+     */
+    public static DERDecoder lenient() {
+        return new DERDecoder(true);
+    }
 }

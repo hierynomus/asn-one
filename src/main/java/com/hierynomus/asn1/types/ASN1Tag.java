@@ -253,16 +253,38 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         return forTag(ASN1TagClass.CONTEXT_SPECIFIC, tag);
     }
 
+    /**
+     * Like {@link #forTag(ASN1TagClass, int)}, but returns a tag for an {@link ASN1UnknownObject} for a UNIVERSAL tag
+     * number that has no specific type in this library, instead of failing.
+     */
+    public static ASN1Tag forTagOrUnknown(ASN1TagClass asn1TagClass, int tag) {
+        if (asn1TagClass == ASN1TagClass.UNIVERSAL && findUniversalTag(tag) == null) {
+            return ASN1UnknownObject.universalTag(tag);
+        }
+        return forTag(asn1TagClass, tag);
+    }
+
+    private static ASN1Tag findUniversalTag(int tag) {
+        for (ASN1Tag asn1Tag : tags.values()) {
+            if (asn1Tag.tag == tag && asn1Tag.asn1TagClass == ASN1TagClass.UNIVERSAL) {
+                return asn1Tag;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @throws ASN1ParseException for a UNIVERSAL tag number that has no specific type in this library
+     * @see #forTagOrUnknown(ASN1TagClass, int)
+     */
     public static ASN1Tag forTag(ASN1TagClass asn1TagClass, int tag) {
         switch (asn1TagClass) {
             case UNIVERSAL:
-                for (ASN1Tag asn1Tag : tags.values()) {
-                    if (asn1Tag.tag == tag && asn1TagClass == asn1Tag.asn1TagClass) {
-                        return asn1Tag;
-                    }
+                ASN1Tag universalTag = findUniversalTag(tag);
+                if (universalTag != null) {
+                    return universalTag;
                 }
-                // Keep the object as is, instead of failing on the whole structure.
-                return ASN1UnknownObject.universalTag(tag);
+                break;
             case APPLICATION:
             case CONTEXT_SPECIFIC:
             case PRIVATE:

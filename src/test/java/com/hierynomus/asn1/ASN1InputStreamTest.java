@@ -54,6 +54,16 @@ class ASN1InputStreamTest {
     }
 
     @Test
+    void shouldReportUnknownTagInsideSequence() {
+        // SEQUENCE { [UNIVERSAL 14] } - the unknown tag used to be hidden behind a NoSuchElementException
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes(0x30, 0x02, 0x0e, 0x00));
+
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, is::readObject);
+
+        assertEquals("Unknown ASN.1 tag 'UNIVERSAL:14' found", ex.getMessage());
+    }
+
+    @Test
     void shouldKeepCauseOfErrorInsideSequence() {
         // SEQUENCE { INTEGER with the constructed bit set }
         ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes(0x30, 0x03, 0x22, 0x01, 0x03));
