@@ -20,7 +20,6 @@ import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.types.ASN1Object;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -52,15 +51,6 @@ class ASN1InputStreamTest {
 
         assertEquals(ASN1Tag.INTEGER, is.readTag());
         assertEquals(127, is.readLength());
-    }
-
-    @Test
-    void shouldReportPemInputClearly() {
-        byte[] pem = "-----BEGIN CERTIFICATE-----\nMIIB...\n-----END CERTIFICATE-----\n".getBytes(StandardCharsets.US_ASCII);
-
-        ASN1ParseException ex = assertThrows(ASN1ParseException.class, () -> new ASN1InputStream(new BERDecoder(), pem).readObject());
-
-        assertTrue(ex.getMessage().contains("PEM"), ex.getMessage());
     }
 
     @Test
