@@ -32,6 +32,8 @@ If you're building your project using Maven, you can add the following dependenc
 If your project is built using another build tool that uses the Maven Central repository, translate this dependency into the format used by your build tool.
 
 == Building asn-one
+Building requires JDK 17 or newer. The library itself targets Java 8, so it can be used on any Java 8+ runtime.
+
 . Clone the asn-one repository.
 . Run the command `./gradlew clean build`.
 
