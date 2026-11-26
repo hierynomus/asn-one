@@ -25,6 +25,8 @@ import com.hierynomus.asn1.types.constructed.ASN1Set;
 import com.hierynomus.asn1.types.constructed.ASN1TaggedObject;
 import com.hierynomus.asn1.types.primitive.*;
 import com.hierynomus.asn1.types.string.ASN1BitString;
+import com.hierynomus.asn1.types.string.ASN1GeneralizedTime;
+import com.hierynomus.asn1.types.string.ASN1IA5String;
 import com.hierynomus.asn1.types.string.ASN1NumericString;
 import com.hierynomus.asn1.types.string.ASN1OctetString;
 import com.hierynomus.asn1.types.string.ASN1PrintableString;
@@ -181,6 +183,28 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         }
     };
 
+    public static final ASN1Tag<ASN1IA5String> IA5_STRING = new ASN1Tag<ASN1IA5String>(UNIVERSAL, 0x16, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+        @Override
+        public ASN1Parser<ASN1IA5String> newParser(ASN1Decoder decoder) {
+            return new ASN1IA5String.Parser(decoder);
+        }
+        @Override
+        public ASN1Serializer<ASN1IA5String> newSerializer(ASN1Encoder encoder) {
+            return new ASN1IA5String.Serializer(encoder);
+        }
+    };
+
+    public static final ASN1Tag<ASN1GeneralizedTime> GENERALIZED_TIME = new ASN1Tag<ASN1GeneralizedTime>(UNIVERSAL, 0x18, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+        @Override
+        public ASN1Parser<ASN1GeneralizedTime> newParser(ASN1Decoder decoder) {
+            return new ASN1GeneralizedTime.Parser(decoder);
+        }
+        @Override
+        public ASN1Serializer<ASN1GeneralizedTime> newSerializer(ASN1Encoder encoder) {
+            return new ASN1GeneralizedTime.Serializer(encoder);
+        }
+    };
+
     static {
         tags.put(BOOLEAN.getTag(), BOOLEAN);
         tags.put(INTEGER.getTag(), INTEGER);
@@ -195,6 +219,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         tags.put(SEQUENCE.getTag(), SEQUENCE);
         tags.put(PRINTABLE_STRING.getTag(), PRINTABLE_STRING);
         tags.put(UTC_TIME.getTag(), UTC_TIME);
+        tags.put(IA5_STRING.getTag(), IA5_STRING);
+        tags.put(GENERALIZED_TIME.getTag(), GENERALIZED_TIME);
     }
 
     private final ASN1TagClass asn1TagClass;
