@@ -15,67 +15,61 @@
  */
 package com.hierynomus.asn1.types.string;
 
-import com.hierynomus.asn1.ASN1OutputStream;
+import java.nio.charset.StandardCharsets;
+
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-import java.io.IOException;
-import java.util.Arrays;
+/**
+ * ASN.1 UTF8String (UNIVERSAL 12, X.680 clause 41), any sequence of Unicode characters, encoded as UTF-8.
+ * <p>
+ * As with all {@link ASN1CharacterString character strings}, parsing is lenient: invalid UTF-8 is decoded with
+ * replacement characters in {@link #getValue()}, while the original octets are kept and re-encoded unchanged.
+ */
+public class ASN1UTF8String extends ASN1CharacterString {
 
-public class ASN1UTF8String extends ASN1String<byte[]> {
-    public ASN1UTF8String(byte[] bytes) {
-        super(ASN1Tag.UTF8_STRING, bytes);
+    public ASN1UTF8String(String value) {
+        this(ASN1Tag.UTF8_STRING, value);
     }
 
-    public ASN1UTF8String(ASN1Tag<?> tag, byte[] bytes) {
-        super(tag, bytes);
+    /**
+     * @param tag the tag to use, e.g. an implicit tag
+     * @param value the string value
+     * @throws IllegalArgumentException if the value cannot be encoded as UTF-8, i.e. contains unpaired surrogates
+     */
+    public ASN1UTF8String(ASN1Tag<?> tag, String value) {
+        super(tag, checkEncodable(value), StandardCharsets.UTF_8);
     }
 
-    @Override
-    public byte[] getValue() {
-        return Arrays.copyOf(valueBytes, valueBytes.length);
+    private ASN1UTF8String(ASN1Tag<?> tag, byte[] bytes) {
+        super(tag, bytes, StandardCharsets.UTF_8);
     }
 
-    @Override
-    protected String valueString() {
-        return Arrays.toString(valueBytes);
-    }
-
-    @Override
-    public int length() {
-        return valueBytes.length;
+    private static String checkEncodable(String value) {
+        if (!StandardCharsets.UTF_8.newEncoder().canEncode(value)) {
+            throw new IllegalArgumentException("Value contains unpaired surrogate characters and cannot be encoded as an ASN.1 UTF8String");
+        }
+        return value;
     }
 
     public static class Parser extends ASN1Parser<ASN1UTF8String> {
-
         public Parser(ASN1Decoder decoder) {
             super(decoder);
         }
 
         @Override
         public ASN1UTF8String parse(ASN1Tag<ASN1UTF8String> asn1Tag, byte[] value) throws ASN1ParseException {
-            return new ASN1UTF8String(asn1Tag, value);
+            byte[] contents = primitiveContents(decoder, asn1Tag, ASN1Tag.UTF8_STRING.getTag(), value);
+            return new ASN1UTF8String(asn1Tag.primitive(), contents);
         }
     }
 
-    public static class Serializer extends ASN1Serializer<ASN1UTF8String> {
-
-        public Serializer(final ASN1Encoder encoder) {
+    public static class Serializer extends CharacterStringSerializer<ASN1UTF8String> {
+        public Serializer(ASN1Encoder encoder) {
             super(encoder);
-        }
-
-        @Override
-        public int serializedLength(final ASN1UTF8String asn1Object) throws IOException {
-            return asn1Object.valueBytes.length;
-        }
-
-        @Override
-        public void serialize(final ASN1UTF8String asn1Object, final ASN1OutputStream stream) throws IOException {
-            stream.write(asn1Object.valueBytes);
         }
     }
 }

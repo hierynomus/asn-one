@@ -83,23 +83,23 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             return new ASN1OctetString.Serializer(encoder);
         }
     };
-    public static final ASN1Tag<?> UTF8_STRING = new ASN1Tag(UNIVERSAL, 0x0C, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+    public static final ASN1Tag<ASN1UTF8String> UTF8_STRING = new ASN1Tag<ASN1UTF8String>(UNIVERSAL, 0x0C, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
         @Override
-        public ASN1Parser<?> newParser(ASN1Decoder decoder) {
+        public ASN1Parser<ASN1UTF8String> newParser(ASN1Decoder decoder) {
             return new ASN1UTF8String.Parser(decoder);
         }
         @Override
-        public ASN1Serializer newSerializer(ASN1Encoder encoder) {
+        public ASN1Serializer<ASN1UTF8String> newSerializer(ASN1Encoder encoder) {
             return new ASN1UTF8String.Serializer(encoder);
         }
     };
-    public static final ASN1Tag<?> NUMERIC_STRING = new ASN1Tag(UNIVERSAL, 0x12, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+    public static final ASN1Tag<ASN1NumericString> NUMERIC_STRING = new ASN1Tag<ASN1NumericString>(UNIVERSAL, 0x12, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
         @Override
-        public ASN1Parser<?> newParser(ASN1Decoder decoder) {
+        public ASN1Parser<ASN1NumericString> newParser(ASN1Decoder decoder) {
             return new ASN1NumericString.Parser(decoder);
         }
         @Override
-        public ASN1Serializer newSerializer(ASN1Encoder encoder) {
+        public ASN1Serializer<ASN1NumericString> newSerializer(ASN1Encoder encoder) {
             return new ASN1NumericString.Serializer(encoder);
         }
     };

@@ -15,67 +15,75 @@
  */
 package com.hierynomus.asn1.types.string;
 
-import com.hierynomus.asn1.ASN1OutputStream;
+import java.nio.charset.StandardCharsets;
+
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
-import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-import java.io.IOException;
-import java.util.Arrays;
+/**
+ * ASN.1 NumericString (UNIVERSAL 18, X.680 clause 41).
+ * <p>
+ * Permitted characters are the digits {@code 0-9} and space. As with all
+ * {@link ASN1CharacterString character strings}, this is enforced when constructing a value, but not when parsing.
+ */
+public class ASN1NumericString extends ASN1CharacterString {
 
-public class ASN1NumericString extends ASN1String<byte[]> {
-    public ASN1NumericString(byte[] bytes) {
-        super(ASN1Tag.NUMERIC_STRING, bytes);
+    public ASN1NumericString(String value) {
+        this(ASN1Tag.NUMERIC_STRING, value);
     }
 
-    public ASN1NumericString(ASN1Tag<?> tag, byte[] bytes) {
-        super(tag, bytes);
+    /**
+     * @param tag the tag to use, e.g. an implicit tag
+     * @param value the string value
+     * @throws IllegalArgumentException if the value contains a character not permitted in a NumericString
+     */
+    public ASN1NumericString(ASN1Tag<?> tag, String value) {
+        super(tag, checkNumeric(value), StandardCharsets.US_ASCII);
     }
 
-    @Override
-    public byte[] getValue() {
-        return Arrays.copyOf(valueBytes, valueBytes.length);
+    private ASN1NumericString(ASN1Tag<?> tag, byte[] bytes) {
+        // ISO-8859-1 maps every octet to a character, so even non-conforming content survives a round trip.
+        super(tag, bytes, StandardCharsets.ISO_8859_1);
     }
 
-    @Override
-    protected String valueString() {
-        return Arrays.toString(valueBytes);
+    /**
+     * @return whether every character of {@code value} is permitted in a NumericString.
+     */
+    public static boolean isNumericString(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if ((c < '0' || c > '9') && c != ' ') {
+                return false;
+            }
+        }
+        return true;
     }
 
-    @Override
-    public int length() {
-        return valueBytes.length;
+    private static String checkNumeric(String value) {
+        if (!isNumericString(value)) {
+            throw new IllegalArgumentException("Value contains characters not permitted in an ASN.1 NumericString: " + value);
+        }
+        return value;
     }
 
     public static class Parser extends ASN1Parser<ASN1NumericString> {
-
         public Parser(ASN1Decoder decoder) {
             super(decoder);
         }
 
         @Override
         public ASN1NumericString parse(ASN1Tag<ASN1NumericString> asn1Tag, byte[] value) throws ASN1ParseException {
-            return new ASN1NumericString(asn1Tag, value);
+            byte[] contents = primitiveContents(decoder, asn1Tag, ASN1Tag.NUMERIC_STRING.getTag(), value);
+            return new ASN1NumericString(asn1Tag.primitive(), contents);
         }
     }
 
-    public static class Serializer extends ASN1Serializer<ASN1NumericString> {
-
-        public Serializer(final ASN1Encoder encoder) {
+    public static class Serializer extends CharacterStringSerializer<ASN1NumericString> {
+        public Serializer(ASN1Encoder encoder) {
             super(encoder);
-        }
-
-        @Override
-        public int serializedLength(final ASN1NumericString asn1Object) throws IOException {
-            return asn1Object.valueBytes.length;
-        }
-
-        @Override
-        public void serialize(final ASN1NumericString asn1Object, final ASN1OutputStream stream) throws IOException {
-            stream.write(asn1Object.valueBytes);
         }
     }
 }
