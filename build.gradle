@@ -22,8 +22,9 @@ ext {
 }
 
 compileJava {
-  // Keep producing Java 7 bytecode; --release also verifies we only use the Java 7 API.
-  options.release = 7
+  // Java 8 bytecode, matching sshj and smbj; --release also verifies we only use the Java 8 API.
+  // (Java 7 is no longer a supported target since JDK 20.)
+  options.release = 8
 }
 
 compileTestJava {
