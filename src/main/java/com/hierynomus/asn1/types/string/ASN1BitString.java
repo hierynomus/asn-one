@@ -26,6 +26,8 @@ import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.types.ASN1TagClass;
 import com.hierynomus.asn1.util.Checks;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 public class ASN1BitString extends ASN1String<boolean[]> {
 
     private int unusedBits;
@@ -135,7 +137,7 @@ public class ASN1BitString extends ASN1String<boolean[]> {
                     while (stream.available() > 0) {
                         ASN1Tag subTag = stream.readTag();
                         // Segments are always UNIVERSAL BIT STRINGs (X.690 8.6.4), also when the outer tag is implicit.
-                        Checks.checkState(subTag.getAsn1TagClass() == ASN1TagClass.UNIVERSAL && subTag.getTag() == ASN1Tag.BIT_STRING.getTag() && !subTag.isConstructed(),
+                        checkFormat(subTag.getAsn1TagClass() == ASN1TagClass.UNIVERSAL && subTag.getTag() == ASN1Tag.BIT_STRING.getTag() && !subTag.isConstructed(),
                             "Expected a primitive ASN.1 BIT STRING segment in Constructed object, got: %s", subTag);
                         int i = stream.readLength();
                         byte[] subValue = stream.readValue(i);
@@ -149,7 +151,7 @@ public class ASN1BitString extends ASN1String<boolean[]> {
                     }
                     // Normalise to the primitive form, which is how the joined contents will be serialized (X.690 10.2).
                     return new ASN1BitString(asn1Tag.primitive(), baos.toByteArray(), unusedBits);
-                } catch (IOException | IllegalStateException e) {
+                } catch (IOException e) {
                     throw new ASN1ParseException(e, "Unable to parse Constructed ASN.1 BIT STRING");
                 }
             } else {
@@ -166,16 +168,10 @@ public class ASN1BitString extends ASN1String<boolean[]> {
          * @return the number of unused bits
          */
         private static int checkInitialOctet(byte[] contents, boolean mustBeZero) {
-            if (contents.length == 0) {
-                throw new ASN1ParseException("ASN.1 BIT STRING is missing the initial octet with the number of unused bits");
-            }
+            checkFormat(contents.length > 0, "ASN.1 BIT STRING is missing the initial octet with the number of unused bits");
             int unusedBits = contents[0] & 0xff;
-            if (unusedBits > 7) {
-                throw new ASN1ParseException("ASN.1 BIT STRING has %s unused bits, at most 7 are allowed", unusedBits);
-            }
-            if (unusedBits != 0 && (contents.length == 1 || mustBeZero)) {
-                throw new ASN1ParseException("ASN.1 BIT STRING has %s unused bits where none are allowed", unusedBits);
-            }
+            checkFormat(unusedBits <= 7, "ASN.1 BIT STRING has %s unused bits, at most 7 are allowed", unusedBits);
+            checkFormat(unusedBits == 0 || (contents.length > 1 && !mustBeZero), "ASN.1 BIT STRING has %s unused bits where none are allowed", unusedBits);
             return unusedBits;
         }
     }

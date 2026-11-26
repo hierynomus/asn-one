@@ -15,6 +15,8 @@
  */
 package com.hierynomus.asn1.util;
 
+import com.hierynomus.asn1.ASN1ParseException;
+
 public class Checks {
 
     private Checks() {
@@ -26,6 +28,17 @@ public class Checks {
             throw new IllegalStateException(String.format(messageFormat, args));
         }
     }
+    /**
+     * Checks a property of the input that is being parsed.
+     *
+     * @throws ASN1ParseException with the formatted message if the condition does not hold
+     */
+    public static void checkFormat(boolean condition, String messageFormat, Object... args) {
+        if (!condition) {
+            throw new ASN1ParseException(messageFormat, args);
+        }
+    }
+
     public static void checkArgument(boolean bool, String messageFormat, Object... args) {
         if (!bool) {
             throw new IllegalArgumentException(String.format(messageFormat, args));

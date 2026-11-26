@@ -17,12 +17,13 @@ package com.hierynomus.asn1.types.primitive;
 
 import java.io.IOException;
 import com.hierynomus.asn1.ASN1OutputStream;
-import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
+
+import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
 
@@ -55,10 +56,8 @@ public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
 
         @Override
         public ASN1Boolean parse(ASN1Tag<ASN1Boolean> asn1Tag, byte[] value) {
-            if (value.length != 1) {
-                // X.690 8.2.1: a single content octet
-                throw new ASN1ParseException("ASN.1 BOOLEAN must have exactly one content octet, but has %s", value.length);
-            }
+            // X.690 8.2.1: a single content octet
+            checkFormat(value.length == 1, "ASN.1 BOOLEAN must have exactly one content octet, but has %s", value.length);
             return new ASN1Boolean(value, value[0] != 0x0);
         }
     }
