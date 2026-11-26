@@ -126,7 +126,12 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
             return object;
         }
         try (ASN1InputStream inputStream = new ASN1InputStream(decoder, bytes)) {
-            return inputStream.readObject();
+            ASN1Object read = inputStream.readObject();
+            if (inputStream.available() > 0) {
+                // An explicitly tagged object contains exactly one complete encoding (X.690 8.14.3)
+                throw new ASN1ParseException("%s bytes left after the explicitly tagged object", inputStream.available());
+            }
+            return read;
         } catch (ASN1ParseException e) {
             throw new ASN1ParseException(e, "Unable to parse the explicit Tagged Object with %s, it might be implicit", tag);
         } catch (IOException e) {

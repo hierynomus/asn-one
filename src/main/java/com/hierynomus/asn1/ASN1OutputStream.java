@@ -73,8 +73,23 @@ public class ASN1OutputStream extends FilterOutputStream {
     }
 
     private void writeTag(final ASN1Tag tag) throws IOException {
-        byte tagByte = (byte) (tag.getAsn1TagClass().getValue() | tag.getAsn1Encoding().getValue() | tag.getTag());
-        write(tagByte);
+        int identifier = tag.getAsn1TagClass().getValue() | tag.getAsn1Encoding().getValue();
+        int tagNumber = tag.getTag();
+        if (tagNumber < 0x1f) {
+            write(identifier | tagNumber);
+            return;
+        }
+        // High tag number form (X.690 8.1.2.4): 0x1F, then the number in base 128, most significant group first,
+        // with bit 8 set on all but the last octet.
+        write(identifier | 0x1f);
+        int shift = 28;
+        while (shift > 0 && (tagNumber >>> shift) == 0) {
+            shift -= 7;
+        }
+        for (; shift > 0; shift -= 7) {
+            write(0x80 | ((tagNumber >>> shift) & 0x7f));
+        }
+        write(tagNumber & 0x7f);
     }
 
     @Override

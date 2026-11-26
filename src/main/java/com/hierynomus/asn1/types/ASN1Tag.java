@@ -261,7 +261,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
                         return asn1Tag;
                     }
                 }
-                break;
+                // Keep the object as is, instead of failing on the whole structure.
+                return ASN1UnknownObject.universalTag(tag);
             case APPLICATION:
             case CONTEXT_SPECIFIC:
             case PRIVATE:
