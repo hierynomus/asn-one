@@ -22,7 +22,7 @@ import java.io.InputStream;
 
 public interface ASN1Decoder {
 
-    ASN1Tag<? extends ASN1Object> readTag(InputStream is);
+    ASN1Tag<? extends ASN1Object<?>> readTag(InputStream is);
 
     int readLength(InputStream is);
 

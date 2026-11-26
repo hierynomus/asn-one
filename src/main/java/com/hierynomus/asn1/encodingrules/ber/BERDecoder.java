@@ -28,7 +28,7 @@ import java.io.InputStream;
 public class BERDecoder implements ASN1Decoder {
 
     @Override
-    public ASN1Tag<? extends ASN1Object> readTag(InputStream is) {
+    public ASN1Tag<? extends ASN1Object<?>> readTag(InputStream is) {
         try {
             int tagByte = is.read();
             ASN1TagClass asn1TagClass = ASN1TagClass.parseClass((byte) tagByte);

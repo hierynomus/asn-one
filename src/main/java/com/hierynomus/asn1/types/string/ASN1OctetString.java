@@ -31,7 +31,7 @@ public class ASN1OctetString extends ASN1String<byte[]> {
         super(ASN1Tag.OCTET_STRING, bytes);
     }
 
-    public ASN1OctetString(ASN1Tag<?> tag, byte[] bytes) {
+    public ASN1OctetString(ASN1Tag<ASN1OctetString> tag, byte[] bytes) {
         super(tag, bytes);
     }
 

@@ -131,7 +131,7 @@ public class ASN1BitString extends ASN1String<boolean[]> {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     int unusedBits = 0;
                     while (stream.available() > 0) {
-                        ASN1Tag subTag = stream.readTag();
+                        ASN1Tag<?> subTag = stream.readTag();
                         Checks.checkState(subTag.getTag() == asn1Tag.getTag(), "Expected an ASN.1 BIT STRING as Constructed object, got: %s", subTag);
                         int i = stream.readLength();
                         byte[] subValue = stream.readValue(i);

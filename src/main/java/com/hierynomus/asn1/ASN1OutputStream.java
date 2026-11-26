@@ -40,8 +40,9 @@ public class ASN1OutputStream extends FilterOutputStream {
         this.encoder = encoder;
     }
 
-    public void writeObject(ASN1Object asn1Object) throws IOException {
-        ASN1Tag tag = asn1Object.getTag();
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void writeObject(ASN1Object<?> asn1Object) throws IOException {
+        ASN1Tag<?> tag = asn1Object.getTag();
         writeTag(tag);
         ASN1Serializer asn1Serializer = asn1Object.getTag().newSerializer(encoder);
         writeLength(asn1Serializer.serializedLength(asn1Object));
@@ -72,7 +73,7 @@ public class ASN1OutputStream extends FilterOutputStream {
         return nrBytes;
     }
 
-    private void writeTag(final ASN1Tag tag) throws IOException {
+    private void writeTag(final ASN1Tag<?> tag) throws IOException {
         byte tagByte = (byte) (tag.getAsn1TagClass().getValue() | tag.getAsn1Encoding().getValue() | tag.getTag());
         write(tagByte);
     }

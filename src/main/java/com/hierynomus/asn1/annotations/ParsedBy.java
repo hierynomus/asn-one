@@ -25,5 +25,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ParsedBy {
-    Class<? extends ASN1Parser> parser();
+    Class<? extends ASN1Parser<?>> parser();
 }

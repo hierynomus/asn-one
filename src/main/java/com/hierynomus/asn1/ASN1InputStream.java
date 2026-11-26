@@ -28,7 +28,7 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
-public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1Object> {
+public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1Object<?>> {
     private static final Logger logger = LoggerFactory.getLogger(ASN1InputStream.class);
     private final ASN1Decoder decoder;
 
@@ -42,7 +42,8 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         this.decoder = decoder;
     }
 
-    public <T extends ASN1Object> T readObject() {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public <T extends ASN1Object<?>> T readObject() {
         try {
             ASN1Tag tag = decoder.readTag(this);
             logger.trace("Read ASN.1 tag {}", tag);
@@ -51,7 +52,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
             byte[] value = decoder.readValue(length, this);
 
             //noinspection unchecked
-            ASN1Object parse = tag.newParser(decoder).parse(tag, value);
+            ASN1Object<?> parse = tag.newParser(decoder).parse(tag, value);
             logger.debug("Read ASN.1 object: {}", parse);
             return (T) parse;
         } catch (ASN1ParseException pe) {
@@ -65,8 +66,8 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         return decoder.readValue(length, this);
     }
 
-    public Iterator<ASN1Object> iterator() {
-        return new Iterator<ASN1Object>() {
+    public Iterator<ASN1Object<?>> iterator() {
+        return new Iterator<ASN1Object<?>>() {
             @Override
             public boolean hasNext() {
                 try {
@@ -78,7 +79,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
             }
 
             @Override
-            public ASN1Object next() {
+            public ASN1Object<?> next() {
                 try {
                     return readObject();
                 } catch (Exception e) {
@@ -93,7 +94,7 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
         };
     }
 
-    public ASN1Tag readTag() {
+    public ASN1Tag<?> readTag() {
         return decoder.readTag(this);
     }
 

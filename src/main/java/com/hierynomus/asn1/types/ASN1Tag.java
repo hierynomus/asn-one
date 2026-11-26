@@ -33,7 +33,7 @@ import static com.hierynomus.asn1.types.ASN1TagClass.UNIVERSAL;
 import static java.lang.String.format;
 import static java.util.EnumSet.of;
 
-public abstract class ASN1Tag<T extends ASN1Object> {
+public abstract class ASN1Tag<T extends ASN1Object<?>> {
     private static Map<Integer, ASN1Tag<?>> tags = new HashMap<>();
 
     public static final ASN1Tag<ASN1Boolean> BOOLEAN = new ASN1Tag<ASN1Boolean>(UNIVERSAL, 0x01, ASN1Encoding.PRIMITIVE) {
@@ -69,13 +69,13 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             return new ASN1BitString.Serializer(encoder);
         }
     };
-    public static final ASN1Tag<?> OCTET_STRING = new ASN1Tag(UNIVERSAL, 0x04, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+    public static final ASN1Tag<ASN1OctetString> OCTET_STRING = new ASN1Tag<ASN1OctetString>(UNIVERSAL, 0x04, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
         @Override
-        public ASN1Parser<?> newParser(ASN1Decoder decoder) {
+        public ASN1Parser<ASN1OctetString> newParser(ASN1Decoder decoder) {
             return new ASN1OctetString.Parser(decoder);
         }
         @Override
-        public ASN1Serializer newSerializer(ASN1Encoder encoder) {
+        public ASN1Serializer<ASN1OctetString> newSerializer(ASN1Encoder encoder) {
             return new ASN1OctetString.Serializer(encoder);
         }
     };
@@ -194,18 +194,18 @@ public abstract class ASN1Tag<T extends ASN1Object> {
         };
     }
 
-    public static ASN1Tag application(int tag) {
+    public static ASN1Tag<? extends ASN1Object<?>> application(int tag) {
         return forTag(ASN1TagClass.APPLICATION, tag);
     }
 
-    public static ASN1Tag contextSpecific(int tag) {
+    public static ASN1Tag<? extends ASN1Object<?>> contextSpecific(int tag) {
         return forTag(ASN1TagClass.CONTEXT_SPECIFIC, tag);
     }
 
-    public static ASN1Tag forTag(ASN1TagClass asn1TagClass, int tag) {
+    public static ASN1Tag<? extends ASN1Object<?>> forTag(ASN1TagClass asn1TagClass, int tag) {
         switch (asn1TagClass) {
             case UNIVERSAL:
-                for (ASN1Tag asn1Tag : tags.values()) {
+                for (ASN1Tag<?> asn1Tag : tags.values()) {
                     if (asn1Tag.tag == tag && asn1TagClass == asn1Tag.asn1TagClass) {
                         return asn1Tag;
                     }
@@ -214,14 +214,14 @@ public abstract class ASN1Tag<T extends ASN1Object> {
             case APPLICATION:
             case CONTEXT_SPECIFIC:
             case PRIVATE:
-                return new ASN1Tag(asn1TagClass, tag, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
+                return new ASN1Tag<ASN1TaggedObject>(asn1TagClass, tag, of(ASN1Encoding.PRIMITIVE, ASN1Encoding.CONSTRUCTED)) {
                     @Override
-                    public ASN1Parser<?> newParser(ASN1Decoder decoder) {
+                    public ASN1Parser<ASN1TaggedObject> newParser(ASN1Decoder decoder) {
                         return new ASN1TaggedObject.Parser(decoder);
                     }
 
                     @Override
-                    public ASN1Serializer newSerializer(ASN1Encoder encoder) {
+                    public ASN1Serializer<ASN1TaggedObject> newSerializer(ASN1Encoder encoder) {
                         return new ASN1TaggedObject.Serializer(encoder);
                     }
                 };
@@ -259,7 +259,8 @@ public abstract class ASN1Tag<T extends ASN1Object> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ASN1Tag asn1Tag = (ASN1Tag) o;
+        @SuppressWarnings("unchecked")
+        ASN1Tag<T> asn1Tag = (ASN1Tag<T>) o;
         return getTag() == asn1Tag.getTag() &&
             asn1TagClass == asn1Tag.asn1TagClass &&
             asn1Encoding == asn1Tag.asn1Encoding;

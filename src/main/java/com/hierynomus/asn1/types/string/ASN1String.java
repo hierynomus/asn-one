@@ -27,17 +27,17 @@ import com.hierynomus.asn1.types.*;
 public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primitive, ASN1Constructed {
     protected byte[] valueBytes;
 
-    public ASN1String(ASN1Tag<?> tag, byte[] bytes) {
+    public ASN1String(ASN1Tag<? extends ASN1String<T>> tag, byte[] bytes) {
         super(tag);
         this.valueBytes = bytes;
     }
 
     @Override
-    public Iterator<ASN1Object> iterator() {
+    public Iterator<ASN1Object<?>> iterator() {
         if (tag.getAsn1Encoding() == ASN1Encoding.CONSTRUCTED) {
             return ASN1Tag.SEQUENCE.newParser(new BERDecoder()).parse(ASN1Tag.SEQUENCE, valueBytes).iterator();
         } else {
-            return Collections.<ASN1Object>singletonList(this).iterator();
+            return Collections.<ASN1Object<?>>singletonList(this).iterator();
         }
     }
 
