@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types;
 
 import com.hierynomus.asn1.ASN1InputStream;
 import com.hierynomus.asn1.ASN1OutputStream;
+import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import com.hierynomus.asn1.encodingrules.der.DEREncoder;
 import com.hierynomus.asn1.types.constructed.ASN1Sequence;
@@ -29,6 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import static com.hierynomus.asn1.Bytes.bytes;
@@ -36,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class ASN1UnknownObjectTest {
@@ -70,6 +73,23 @@ class ASN1UnknownObjectTest {
         ASN1Object<?> nested = new ASN1InputStream(new BERDecoder(), unknown.getValue()).readObject();
 
         assertEquals(new ASN1Integer(5), nested);
+    }
+
+    @Test
+    void shouldRejectConstructedUnknownObjectWithMalformedContents() {
+        // [UNIVERSAL 8] constructed, but its contents are not a complete encoding (length 5, only 1 byte)
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes(0x28, 0x03, 0x02, 0x05, 0x01));
+
+        assertThrows(ASN1ParseException.class, is::readObject);
+    }
+
+    @Test
+    void shouldRejectTextThatIsNotBerEncoded() {
+        // E.g. a PEM certificate passed in without Base64 decoding: '-' (0x2D) reads as a constructed UNIVERSAL 13
+        byte[] pem = "-----BEGIN CERTIFICATE-----\nMIIBszCCAVmgAwIBAgIUQ...\n-----END CERTIFICATE-----\n".getBytes(StandardCharsets.US_ASCII);
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), pem);
+
+        assertThrows(ASN1ParseException.class, is::readObject);
     }
 
     @Test

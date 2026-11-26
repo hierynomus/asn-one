@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
 
+import com.hierynomus.asn1.ASN1InputStream;
 import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
@@ -32,7 +33,8 @@ import com.hierynomus.asn1.encodingrules.ASN1Encoder;
  * <p>
  * Rather than failing on the whole structure, such an object is kept with its tag and raw contents octets, so the
  * rest of the structure can still be read, and the object is re-encoded exactly as it was read. For a constructed
- * encoding, the contents are the nested encodings, which can be read with an {@link com.hierynomus.asn1.ASN1InputStream}.
+ * encoding, the contents are the nested encodings, which are checked to be well-formed when parsing, and can be read
+ * with an {@link ASN1InputStream}.
  */
 public class ASN1UnknownObject extends ASN1Object<byte[]> {
     private final byte[] contents;
@@ -92,7 +94,26 @@ public class ASN1UnknownObject extends ASN1Object<byte[]> {
 
         @Override
         public ASN1UnknownObject parse(ASN1Tag<ASN1UnknownObject> asn1Tag, byte[] value) throws ASN1ParseException {
+            if (asn1Tag.isConstructed()) {
+                checkNestedEncodings(asn1Tag, value);
+            }
             return new ASN1UnknownObject(asn1Tag, value);
+        }
+
+        /**
+         * The contents of a constructed encoding are complete encodings themselves (X.690 8.1.2.5). Without a known
+         * type this is the only thing that can be checked, but it does reject input that is not BER/DER at all.
+         */
+        private void checkNestedEncodings(ASN1Tag<ASN1UnknownObject> asn1Tag, byte[] value) {
+            try (ASN1InputStream stream = new ASN1InputStream(decoder, value)) {
+                while (stream.available() > 0) {
+                    stream.readObject();
+                }
+            } catch (ASN1ParseException e) {
+                throw new ASN1ParseException(e, "Contents of constructed %s are not valid nested encodings", asn1Tag);
+            } catch (IOException e) {
+                throw new ASN1ParseException(e, "Unable to read contents of constructed %s", asn1Tag);
+            }
         }
     }
 
