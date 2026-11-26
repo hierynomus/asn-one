@@ -17,11 +17,17 @@ package com.hierynomus.asn1;
 
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import com.hierynomus.asn1.types.ASN1Tag;
+import com.hierynomus.asn1.types.ASN1Object;
 import org.junit.jupiter.api.Test;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import static com.hierynomus.asn1.Bytes.bytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ASN1InputStreamTest {
 
@@ -45,5 +51,39 @@ class ASN1InputStreamTest {
 
         assertEquals(ASN1Tag.INTEGER, is.readTag());
         assertEquals(127, is.readLength());
+    }
+
+    @Test
+    void shouldReportUnknownTagInsideSequence() {
+        // SEQUENCE { [UNIVERSAL 14] } - the unknown tag used to be hidden behind a NoSuchElementException
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes(0x30, 0x02, 0x0e, 0x00));
+
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, is::readObject);
+
+        assertEquals("Unknown ASN.1 tag 'UNIVERSAL:14' found", ex.getMessage());
+    }
+
+    @Test
+    void shouldKeepCauseOfErrorInsideSequence() {
+        // SEQUENCE { INTEGER with the constructed bit set }
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), bytes(0x30, 0x03, 0x22, 0x01, 0x03));
+
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, is::readObject);
+
+        StringBuilder messages = new StringBuilder();
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            messages.append(t.getMessage()).append('\n');
+        }
+        assertTrue(messages.toString().contains("does not support encoding as CONSTRUCTED"), messages.toString());
+    }
+
+    @Test
+    void iteratorShouldThrowNoSuchElementWhenExhausted() {
+        Iterator<ASN1Object> iterator = new ASN1InputStream(new BERDecoder(), bytes(0x05, 0x00)).iterator();
+
+        iterator.next();
+
+        assertFalse(iterator.hasNext());
+        assertThrows(NoSuchElementException.class, iterator::next);
     }
 }
