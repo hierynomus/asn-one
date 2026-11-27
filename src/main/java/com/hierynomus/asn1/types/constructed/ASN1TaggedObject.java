@@ -17,6 +17,7 @@ package com.hierynomus.asn1.types.constructed;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import com.hierynomus.asn1.*;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
@@ -50,9 +51,23 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         super(tag);
         this.bytes = bytes;
         this.decoder = decoder;
+        // An explicit tag always uses the constructed form (X.690 8.14.2), so a primitive one is implicit. A
+        // constructed one can be either: an explicit tag, or an implicit tag on a constructed type such as a SEQUENCE.
+        this.explicit = tag.isConstructed();
         object = null;
     }
 
+    /**
+     * Whether this is an explicitly tagged object.
+     * <p>
+     * For a parsed object, the encoding alone does not always tell: a primitive tagged object is always implicit, but a
+     * constructed one can be either explicitly tagged, or an implicit tag on a constructed type such as a SEQUENCE. In
+     * that case this returns {@code true}, and only the schema determines whether to use {@link #getObject()} or
+     * {@link #getObject(ASN1Tag)}.
+     *
+     * @return {@code false} if this object is implicitly tagged, {@code true} if it is (or, when parsed, may be)
+     * explicitly tagged.
+     */
     public boolean isExplicit() {
         return explicit;
     }
@@ -127,6 +142,8 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         if (object != null) {
             return object;
         }
+        // An explicit tag always uses the constructed form (X.690 8.14.2)
+        checkFormat(tag.isConstructed(), "Unable to parse the primitive Tagged Object with %s as explicit, it is implicit", tag);
         try (ASN1InputStream inputStream = new ASN1InputStream(decoder, bytes)) {
             ASN1Object read = inputStream.readObject();
             // An explicitly tagged object contains exactly one complete encoding (X.690 8.14.3)
@@ -150,6 +167,42 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
             return encodedTag.newParser(decoder).parse(encodedTag, bytes);
         }
         throw new ASN1ParseException("Unable to parse the implicit Tagged Object with %s, it is explicit", tag);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ASN1TaggedObject)) {
+            return false;
+        }
+        ASN1TaggedObject that = (ASN1TaggedObject) o;
+        if (!tag.equals(that.tag)) {
+            return false;
+        }
+        if (object == null && that.object == null) {
+            // Both parsed, without the schema their contents can only be compared as encoded
+            return Arrays.equals(bytes, that.bytes);
+        }
+        if (object != null && that.object != null) {
+            return explicit == that.explicit && object.equals(that.object);
+        }
+        // One parsed, one constructed: decode the parsed one the way the constructed one is tagged
+        ASN1TaggedObject constructed = object != null ? this : that;
+        ASN1TaggedObject parsed = object != null ? that : this;
+        try {
+            ASN1Object decoded = constructed.explicit ? parsed.getObject() : parsed.getObject(constructed.object.getTag());
+            return constructed.object.equals(decoded);
+        } catch (ASN1ParseException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        // Consistent with equals: parsed and constructed objects can be equal, so only the tag can be used
+        return tag.hashCode();
     }
 
     @Override

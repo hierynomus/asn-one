@@ -19,6 +19,7 @@ package com.hierynomus.asn1.types.constructed;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import com.hierynomus.asn1.*;
@@ -38,9 +39,21 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
         this.bytes = bytes;
     }
 
-    public ASN1Sequence(List<ASN1Object> objects) {
+    /**
+     * Creates a SEQUENCE of the given objects. The list is copied, so later changes to it do not affect this SEQUENCE.
+     *
+     * @param objects the elements of the SEQUENCE.
+     */
+    public ASN1Sequence(List<? extends ASN1Object> objects) {
         super(ASN1Tag.SEQUENCE);
-        this.objects = objects;
+        List<ASN1Object> copy = new ArrayList<>(objects.size());
+        for (ASN1Object object : objects) {
+            if (object == null) {
+                throw new NullPointerException("An ASN.1 SEQUENCE cannot contain null elements");
+            }
+            copy.add(object);
+        }
+        this.objects = Collections.unmodifiableList(copy);
     }
 
     @Override
@@ -50,7 +63,7 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
 
     @Override
     public Iterator<ASN1Object> iterator() {
-        return new ArrayList<>(objects).iterator();
+        return objects.iterator();
     }
 
     public int size() {
@@ -77,7 +90,7 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
             } catch (IOException e) {
                 throw new ASN1ParseException(e, "Unable to parse the ASN.1 SEQUENCE contents.");
             }
-            return new ASN1Sequence(list, value);
+            return new ASN1Sequence(Collections.unmodifiableList(list), value);
         }
     }
 
