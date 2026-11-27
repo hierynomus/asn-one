@@ -21,7 +21,7 @@ public enum ASN1TagClass {
     CONTEXT_SPECIFIC(0x80),
     PRIVATE(0xc0);
 
-    private int value;
+    private final int value;
 
     ASN1TagClass(int value) {
         this.value = value;

@@ -27,7 +27,7 @@ import com.hierynomus.asn1.types.ASN1Tag;
 import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
-    private BigInteger value;
+    private final BigInteger value;
 
     public ASN1Integer(long value) {
         this(BigInteger.valueOf(value));

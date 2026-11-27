@@ -35,8 +35,7 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
     }
 
     public ASN1Enumerated(BigInteger value) {
-        super(ASN1Tag.ENUMERATED);
-        this.value = value;
+        this(value, value.toByteArray());
     }
 
     private ASN1Enumerated(BigInteger value, byte[] valueBytes) {
@@ -70,22 +69,12 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public int serializedLength(final ASN1Enumerated asn1Object) {
-            if (asn1Object.valueBytes == null) {
-                calculateBytes(asn1Object);
-            }
             return asn1Object.valueBytes.length;
         }
 
         @Override
         public void serialize(final ASN1Enumerated asn1Object, final ASN1OutputStream stream) throws IOException {
-            if (asn1Object.valueBytes == null) {
-                calculateBytes(asn1Object);
-            }
             stream.write(asn1Object.valueBytes);
-        }
-
-        private void calculateBytes(final ASN1Enumerated asn1Object) {
-            asn1Object.valueBytes = asn1Object.value.toByteArray();
         }
     }
 

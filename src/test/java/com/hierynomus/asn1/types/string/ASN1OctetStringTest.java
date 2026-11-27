@@ -121,4 +121,14 @@ class ASN1OctetStringTest {
         new ASN1OutputStream(new DEREncoder(), baos).writeObject(object);
         return baos.toByteArray();
     }
+
+    @Test
+    void shouldNotBeAffectedByChangesToTheGivenArray() {
+        byte[] value = bytes(0x01, 0x02);
+        ASN1OctetString octetString = new ASN1OctetString(value);
+
+        value[0] = 0x7f;
+
+        assertArrayEquals(bytes(0x01, 0x02), octetString.getValue());
+    }
 }

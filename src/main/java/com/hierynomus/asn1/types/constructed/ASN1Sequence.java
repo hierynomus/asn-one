@@ -16,7 +16,6 @@
 package com.hierynomus.asn1.types.constructed;
 
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,9 +28,15 @@ import com.hierynomus.asn1.types.ASN1Constructed;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+/**
+ * ASN.1 SEQUENCE and SEQUENCE OF (UNIVERSAL 16).
+ * <p>
+ * A SEQUENCE is immutable. A parsed SEQUENCE is re-encoded with its original contents, one constructed in code is
+ * encoded in DER when it is created.
+ */
 public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Constructed {
     private final List<ASN1Object> objects;
-    private byte[] bytes;
+    private final byte[] bytes;
 
     private ASN1Sequence(List<ASN1Object> objects, byte[] bytes) {
         super(ASN1Tag.SEQUENCE);
@@ -46,14 +51,8 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
      */
     public ASN1Sequence(List<? extends ASN1Object> objects) {
         super(ASN1Tag.SEQUENCE);
-        List<ASN1Object> copy = new ArrayList<>(objects.size());
-        for (ASN1Object object : objects) {
-            if (object == null) {
-                throw new NullPointerException("An ASN.1 SEQUENCE cannot contain null elements");
-            }
-            copy.add(object);
-        }
-        this.objects = Collections.unmodifiableList(copy);
+        this.objects = DerContents.copyElements(objects, "SEQUENCE");
+        this.bytes = DerContents.encodeElements(this.objects, false);
     }
 
     @Override
@@ -72,6 +71,12 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
 
     public ASN1Object get(int i) {
         return objects.get(i);
+    }
+
+    @Override
+    public int hashCode() {
+        // Consistent with equals, which compares the elements in order
+        return 31 * tag.hashCode() + objects.hashCode();
     }
 
     public static class Parser extends ASN1Parser<ASN1Sequence> {
@@ -100,31 +105,13 @@ public class ASN1Sequence extends ASN1Object<List<ASN1Object>> implements ASN1Co
         }
 
         @Override
-        public int serializedLength(final ASN1Sequence asn1Object) throws IOException {
-            if (null == asn1Object.bytes) {
-                calculateBytes(asn1Object);
-            }
+        public int serializedLength(final ASN1Sequence asn1Object) {
             return asn1Object.bytes.length;
-        }
-
-        private void calculateBytes(final ASN1Sequence asn1Object) throws IOException {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, out);
-            for (ASN1Object object : asn1Object) {
-                asn1OutputStream.writeObject(object);
-            }
-            asn1Object.bytes = out.toByteArray();
         }
 
         @Override
         public void serialize(final ASN1Sequence asn1Object, final ASN1OutputStream stream) throws IOException {
-            if (asn1Object.bytes != null) {
-                stream.write(asn1Object.bytes);
-            } else {
-                for (ASN1Object object : asn1Object) {
-                    stream.writeObject(object);
-                }
-            }
+            stream.write(asn1Object.bytes);
         }
     }
 

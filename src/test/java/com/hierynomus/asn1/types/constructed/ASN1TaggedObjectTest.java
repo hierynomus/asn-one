@@ -169,4 +169,29 @@ class ASN1TaggedObjectTest {
         // The contents are not an OBJECT IDENTIFIER, so decoding fails: not equal rather than an exception
         assertNotEquals(new ASN1TaggedObject(contextSpecific(0x01).constructed(), SPNEGO_OID), parsed);
     }
+
+    @Test
+    void taggedObjectsWithTheSameEncodingShouldBeEqual() {
+        // [1] EXPLICIT INTEGER 5 and [1] IMPLICIT SEQUENCE { INTEGER 5 } both encode as a1 03 02 01 05
+        ASN1TaggedObject explicitInteger = new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Integer(5));
+        ASN1TaggedObject implicitSequence = new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Sequence(Collections.<ASN1Object>singletonList(new ASN1Integer(5))), false);
+        ASN1TaggedObject parsed = read(bytes(0xa1, 0x03, 0x02, 0x01, 0x05));
+
+        assertEquals(explicitInteger, implicitSequence);
+        assertEquals(explicitInteger, parsed);
+        assertEquals(implicitSequence, parsed);
+        assertEquals(explicitInteger.hashCode(), implicitSequence.hashCode());
+        assertEquals(explicitInteger.hashCode(), parsed.hashCode());
+    }
+
+    @Test
+    void shouldKeepAllDistinctTaggedObjectsInAHashSet() {
+        java.util.Set<ASN1TaggedObject> set = new java.util.HashSet<>();
+        for (int i = 0; i < 100; i++) {
+            set.add(new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Integer(i)));
+            set.add(read(bytes(0xa1, 0x03, 0x02, 0x01, i)));
+        }
+
+        assertEquals(100, set.size());
+    }
 }

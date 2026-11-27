@@ -36,7 +36,8 @@ public abstract class ASN1String<T> extends ASN1Object<T> implements ASN1Primiti
 
     public ASN1String(ASN1Tag<?> tag, byte[] bytes) {
         super(tag);
-        this.valueBytes = bytes;
+        // Copied, so that changes to the given array cannot change this object
+        this.valueBytes = Arrays.copyOf(bytes, bytes.length);
     }
 
     @Override

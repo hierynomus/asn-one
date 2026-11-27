@@ -27,7 +27,7 @@ import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
 
-    private boolean value;
+    private final boolean value;
 
     public ASN1Boolean(boolean value) {
         super(ASN1Tag.BOOLEAN);

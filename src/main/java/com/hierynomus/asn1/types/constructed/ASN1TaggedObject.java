@@ -15,7 +15,6 @@
  */
 package com.hierynomus.asn1.types.constructed;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -28,11 +27,20 @@ import com.hierynomus.asn1.types.ASN1Tag;
 
 import static com.hierynomus.asn1.util.Checks.checkFormat;
 
+/**
+ * An object with a tag of the APPLICATION, CONTEXT-SPECIFIC or PRIVATE class, which is either explicitly tagged (the
+ * contents are the complete encoding of the underlying object) or implicitly tagged (the contents are those of the
+ * underlying object).
+ * <p>
+ * A tagged object is immutable. A parsed one keeps its original contents and decodes them on request, as only the
+ * schema tells how; one constructed in code is encoded in DER when it is created.
+ */
 public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Constructed {
     private final ASN1Object object;
-    private byte[] bytes;
-    private ASN1Decoder decoder;
-    private boolean explicit = true;
+    private final byte[] bytes;
+    private final ASN1Decoder decoder;
+    private final boolean explicit;
+    private final int hashCode;
 
     public ASN1TaggedObject(ASN1Tag tag, ASN1Object object, boolean explicit) {
         // If this is an explicitly tagged object, it should be constructed form
@@ -40,7 +48,9 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         super(explicit ? tag.constructed() : tag.asEncoded(object.getTag().getAsn1Encoding()));
         this.object = object;
         this.explicit = explicit;
-        this.bytes = null;
+        this.decoder = null;
+        this.bytes = explicit ? DerContents.encode(object) : DerContents.encodeContents(object);
+        this.hashCode = hash(this.tag, this.bytes);
     }
 
     public ASN1TaggedObject(ASN1Tag tag, ASN1Object object) {
@@ -54,7 +64,12 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         // An explicit tag always uses the constructed form (X.690 8.14.2), so a primitive one is implicit. A
         // constructed one can be either: an explicit tag, or an implicit tag on a constructed type such as a SEQUENCE.
         this.explicit = tag.isConstructed();
-        object = null;
+        this.object = null;
+        this.hashCode = hash(this.tag, bytes);
+    }
+
+    private static int hash(ASN1Tag<?> tag, byte[] bytes) {
+        return 31 * tag.hashCode() + Arrays.hashCode(bytes);
     }
 
     /**
@@ -109,31 +124,12 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         }
 
         @Override
-        public int serializedLength(final ASN1TaggedObject asn1Object) throws IOException {
-            if (asn1Object.bytes == null) {
-                calculateBytes(asn1Object);
-            }
+        public int serializedLength(final ASN1TaggedObject asn1Object) {
             return asn1Object.bytes.length;
-        }
-
-        private void calculateBytes(final ASN1TaggedObject asn1Object) throws IOException {
-            ASN1Object object = asn1Object.object;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (ASN1OutputStream asn1OutputStream = new ASN1OutputStream(encoder, baos)) {
-                if (asn1Object.explicit) {
-                    asn1OutputStream.writeObject(object);
-                } else {
-                    object.getTag().newSerializer(encoder).serialize(object, asn1OutputStream);
-                }
-                asn1Object.bytes = baos.toByteArray();
-            }
         }
 
         @Override
         public void serialize(final ASN1TaggedObject asn1Object, final ASN1OutputStream stream) throws IOException {
-            if (asn1Object.bytes == null) {
-                calculateBytes(asn1Object);
-            }
             stream.write(asn1Object.bytes);
         }
     }
@@ -169,6 +165,13 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
         throw new ASN1ParseException("Unable to parse the implicit Tagged Object with %s, it is explicit", tag);
     }
 
+    /**
+     * Two tagged objects are equal if they have the same tag and the same encoded contents.
+     * <p>
+     * Without the schema, that is the only consistent notion of equality: for instance, {@code [1] EXPLICIT INTEGER}
+     * and {@code [1] IMPLICIT SEQUENCE OF INTEGER} can encode to exactly the same octets. A parsed object that was
+     * not DER encoded is therefore not equal to the same value constructed in code.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -178,31 +181,12 @@ public class ASN1TaggedObject extends ASN1Object<ASN1Object> implements ASN1Cons
             return false;
         }
         ASN1TaggedObject that = (ASN1TaggedObject) o;
-        if (!tag.equals(that.tag)) {
-            return false;
-        }
-        if (object == null && that.object == null) {
-            // Both parsed, without the schema their contents can only be compared as encoded
-            return Arrays.equals(bytes, that.bytes);
-        }
-        if (object != null && that.object != null) {
-            return explicit == that.explicit && object.equals(that.object);
-        }
-        // One parsed, one constructed: decode the parsed one the way the constructed one is tagged
-        ASN1TaggedObject constructed = object != null ? this : that;
-        ASN1TaggedObject parsed = object != null ? that : this;
-        try {
-            ASN1Object decoded = constructed.explicit ? parsed.getObject() : parsed.getObject(constructed.object.getTag());
-            return constructed.object.equals(decoded);
-        } catch (ASN1ParseException e) {
-            return false;
-        }
+        return hashCode == that.hashCode && tag.equals(that.tag) && Arrays.equals(bytes, that.bytes);
     }
 
     @Override
     public int hashCode() {
-        // Consistent with equals: parsed and constructed objects can be equal, so only the tag can be used
-        return tag.hashCode();
+        return hashCode;
     }
 
     @Override

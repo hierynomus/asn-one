@@ -75,4 +75,10 @@ class ASN1SequenceTest {
     void shouldRejectNullElements() {
         assertThrows(NullPointerException.class, () -> new ASN1Sequence(Arrays.asList(new ASN1Integer(1), null)));
     }
+
+    @Test
+    void equalSequencesShouldHaveEqualHashCodes() {
+        assertEquals(new ASN1Sequence(Arrays.asList(new ASN1Integer(1), new ASN1Integer(2))).hashCode(),
+            new ASN1Sequence(Arrays.asList(new ASN1Integer(1), new ASN1Integer(2))).hashCode());
+    }
 }

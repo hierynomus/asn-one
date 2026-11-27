@@ -15,12 +15,10 @@
  */
 package com.hierynomus.asn1.types.constructed;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import com.hierynomus.asn1.*;
@@ -41,7 +39,7 @@ import com.hierynomus.asn1.types.ASN1Tag;
  * <ul>
  * <li>A parsed SET is re-encoded with its original contents, so signatures over a received SET (e.g. CMS signed
  * attributes) remain valid, even if the sender did not order the elements canonically.</li>
- * <li>A SET constructed in code is encoded with its elements sorted by their encodings, as DER requires for
+ * <li>A SET constructed in code is encoded when it is created, with its elements sorted by their encodings, as DER requires for
  * SET OF (X.690 11.6). As this library has no schema, it cannot distinguish a SET from a SET OF; for a SET DER
  * orders by tag instead (X.690 10.3), which only differs when components of the same tag class have a different
  * primitive/constructed form.</li>
@@ -49,7 +47,7 @@ import com.hierynomus.asn1.types.ASN1Tag;
  */
 public class ASN1Set extends ASN1Object<List<ASN1Object>> implements ASN1Constructed {
     private final List<ASN1Object> objects;
-    private byte[] bytes;
+    private final byte[] bytes;
 
     private ASN1Set(List<ASN1Object> objects, byte[] bytes) {
         super(ASN1Tag.SET);
@@ -62,7 +60,8 @@ public class ASN1Set extends ASN1Object<List<ASN1Object>> implements ASN1Constru
      */
     public ASN1Set(Collection<? extends ASN1Object> objects) {
         super(ASN1Tag.SET);
-        this.objects = new ArrayList<ASN1Object>(objects);
+        this.objects = DerContents.copyElements(objects, "SET");
+        this.bytes = DerContents.encodeElements(this.objects, true);
     }
 
     /**
@@ -74,7 +73,7 @@ public class ASN1Set extends ASN1Object<List<ASN1Object>> implements ASN1Constru
     }
 
     public Iterator<ASN1Object> iterator() {
-        return new ArrayList<>(objects).iterator();
+        return objects.iterator();
     }
 
     public int size() {
@@ -101,7 +100,12 @@ public class ASN1Set extends ASN1Object<List<ASN1Object>> implements ASN1Constru
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        // Consistent with equals: independent of the order of the elements
+        int hash = 0;
+        for (ASN1Object object : objects) {
+            hash += object.hashCode();
+        }
+        return 31 * tag.hashCode() + hash;
     }
 
     public static class Parser extends ASN1Parser<ASN1Set> {
@@ -120,60 +124,22 @@ public class ASN1Set extends ASN1Object<List<ASN1Object>> implements ASN1Constru
                 throw new ASN1ParseException(e, "Could not parse ASN.1 SET contents.");
             }
 
-            return new ASN1Set(asn1Objects, value);
+            return new ASN1Set(Collections.unmodifiableList(asn1Objects), value);
         }
     }
 
     public static class Serializer extends ASN1Serializer<ASN1Set> {
-        /**
-         * X.690 11.6: ascending order, comparing as octet strings with the shorter one padded with trailing 0-octets.
-         */
-        private static final Comparator<byte[]> DER_ORDER = new Comparator<byte[]>() {
-            @Override
-            public int compare(byte[] a, byte[] b) {
-                for (int i = 0; i < Math.max(a.length, b.length); i++) {
-                    int x = i < a.length ? a[i] & 0xff : 0;
-                    int y = i < b.length ? b[i] & 0xff : 0;
-                    if (x != y) {
-                        return x - y;
-                    }
-                }
-                return 0;
-            }
-        };
-
         public Serializer(final ASN1Encoder encoder) {
             super(encoder);
         }
 
         @Override
-        public int serializedLength(final ASN1Set asn1Object) throws IOException {
-            if (null == asn1Object.bytes) {
-                calculateBytes(asn1Object);
-            }
+        public int serializedLength(final ASN1Set asn1Object) {
             return asn1Object.bytes.length;
-        }
-
-        private void calculateBytes(final ASN1Set asn1Object) throws IOException {
-            List<byte[]> encodings = new ArrayList<>(asn1Object.objects.size());
-            for (ASN1Object object : asn1Object.objects) {
-                ByteArrayOutputStream element = new ByteArrayOutputStream();
-                new ASN1OutputStream(encoder, element).writeObject(object);
-                encodings.add(element.toByteArray());
-            }
-            Collections.sort(encodings, DER_ORDER);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            for (byte[] encoding : encodings) {
-                out.write(encoding);
-            }
-            asn1Object.bytes = out.toByteArray();
         }
 
         @Override
         public void serialize(final ASN1Set asn1Object, final ASN1OutputStream stream) throws IOException {
-            if (asn1Object.bytes == null) {
-                calculateBytes(asn1Object);
-            }
             stream.write(asn1Object.bytes);
         }
     }

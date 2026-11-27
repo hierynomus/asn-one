@@ -39,6 +39,7 @@ import java.util.List;
 import static com.hierynomus.asn1.Bytes.bytes;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
@@ -184,9 +185,19 @@ class ASN1SetTest {
         Iterator<ASN1Object> iterator = set.iterator();
 
         iterator.next();
-        iterator.remove();
 
+        assertThrows(UnsupportedOperationException.class, iterator::remove);
         assertEquals(2, set.size());
+    }
+
+    @Test
+    void equalSetsShouldHaveEqualHashCodes() {
+        assertEquals(setOf(1, 2, 2).hashCode(), setOf(2, 1, 2).hashCode());
+    }
+
+    @Test
+    void shouldRejectNullElements() {
+        assertThrows(NullPointerException.class, () -> new ASN1Set(Arrays.asList(new ASN1Integer(1), null)));
     }
 
     @Test

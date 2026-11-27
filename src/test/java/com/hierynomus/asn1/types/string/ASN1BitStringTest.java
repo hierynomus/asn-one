@@ -232,4 +232,24 @@ class ASN1BitStringTest {
         }
         return bitSet;
     }
+
+    @Test
+    void shouldNotBeAffectedByChangesToTheGivenBits() {
+        boolean[] bits = {true, false, true};
+        ASN1BitString bitString = new ASN1BitString(bits);
+
+        bits[1] = true;
+
+        assertArrayEquals(new boolean[]{true, false, true}, bitString.getValue());
+    }
+
+    @Test
+    void shouldNotBeAffectedByChangesToTheGivenBytes() {
+        byte[] value = bytes(0xa0);
+        ASN1BitString bitString = new ASN1BitString(value, 5);
+
+        value[0] = (byte) 0xe0;
+
+        assertArrayEquals(bytes(0xa0), bitString.getValueBytes());
+    }
 }

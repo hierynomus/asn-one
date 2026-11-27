@@ -30,8 +30,8 @@ import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 public class ASN1BitString extends ASN1String<boolean[]> {
 
-    private int unusedBits;
-    private boolean[] bits;
+    private final int unusedBits;
+    private final boolean[] bits;
 
     private ASN1BitString(ASN1Tag<ASN1BitString> tag, byte[] bytes, int unusedBits) {
         super(tag, bytes);
@@ -45,7 +45,7 @@ public class ASN1BitString extends ASN1String<boolean[]> {
 
     public ASN1BitString(boolean[] bits) {
         super(ASN1Tag.BIT_STRING, constructBytes(bits));
-        this.bits = bits;
+        this.bits = Arrays.copyOf(bits, bits.length);
         // 0-7 unused bits in the last octet (X.690 8.6.2.2)
         this.unusedBits = (8 - bits.length % 8) % 8;
     }
