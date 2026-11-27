@@ -18,7 +18,11 @@ package com.hierynomus.asn1;
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.types.ASN1Object;
+import com.hierynomus.asn1.types.constructed.ASN1Sequence;
+import com.hierynomus.asn1.types.constructed.ASN1TaggedObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -26,6 +30,7 @@ import java.util.NoSuchElementException;
 import static com.hierynomus.asn1.Bytes.bytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,5 +90,68 @@ class ASN1InputStreamTest {
 
         assertFalse(iterator.hasNext());
         assertThrows(NoSuchElementException.class, iterator::next);
+    }
+
+    /**
+     * {@code levels} nested encodings of the given constructed identifier, around a NULL (which is one more level).
+     */
+    private static byte[] nested(int identifier, int levels) {
+        byte[] inner = bytes(0x05, 0x00);
+        for (int i = 0; i < levels; i++) {
+            int l = inner.length;
+            byte[] lengthOctets = l < 128 ? bytes(l) : l < 256 ? bytes(0x81, l) : bytes(0x82, l >> 8, l);
+            byte[] wrapped = new byte[1 + lengthOctets.length + l];
+            wrapped[0] = (byte) identifier;
+            System.arraycopy(lengthOctets, 0, wrapped, 1, lengthOctets.length);
+            System.arraycopy(inner, 0, wrapped, 1 + lengthOctets.length, l);
+            inner = wrapped;
+        }
+        return inner;
+    }
+
+    @Test
+    void shouldParseNestingUpToTheLimit() {
+        ASN1Object<?> object = new ASN1InputStream(new BERDecoder(), nested(0x30, ASN1InputStream.MAX_NESTING_DEPTH - 1)).readObject();
+
+        assertInstanceOf(ASN1Sequence.class, object);
+    }
+
+    @ParameterizedTest(name = "identifier {0}")
+    @ValueSource(ints = {0x30, 0x31})   // SEQUENCE, SET
+    void shouldRejectNestingBeyondTheLimit(int identifier) {
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), nested(identifier, ASN1InputStream.MAX_NESTING_DEPTH));
+
+        assertThrows(ASN1ParseException.class, is::readObject);
+    }
+
+    @Test
+    void shouldUnwrapDeepChainOfTaggedObjectsOneLevelAtATime() {
+        // Tagged objects are parsed lazily, one level per getObject() call, so a deep chain does not recurse
+        ASN1Object<?> object = new ASN1InputStream(new BERDecoder(), nested(0xa0, 3000)).readObject();
+        int levels = 0;
+        while (object instanceof ASN1TaggedObject) {
+            object = ((ASN1TaggedObject) object).getObject();
+            levels++;
+        }
+
+        assertEquals(3000, levels);
+    }
+
+    @Test
+    void shouldRejectDeepNestingWithoutStackOverflow() {
+        // ~9 KB of input; used to cause a StackOverflowError
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), nested(0x30, 3000));
+
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, is::readObject);
+
+        assertTrue(ex.getMessage().contains("nested deeper than"), ex.getMessage());
+    }
+
+    @Test
+    void shouldResetNestingDepthAfterFailure() {
+        assertThrows(ASN1ParseException.class, () -> new ASN1InputStream(new BERDecoder(), nested(0x30, 3000)).readObject());
+
+        // A following parse on the same thread starts at depth 0 again
+        assertInstanceOf(ASN1Sequence.class, new ASN1InputStream(new BERDecoder(), nested(0x30, ASN1InputStream.MAX_NESTING_DEPTH - 1)).readObject());
     }
 }

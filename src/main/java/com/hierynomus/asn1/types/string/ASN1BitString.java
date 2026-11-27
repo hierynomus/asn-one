@@ -26,10 +26,12 @@ import com.hierynomus.asn1.types.ASN1Tag;
 import com.hierynomus.asn1.types.ASN1TagClass;
 import com.hierynomus.asn1.util.Checks;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 public class ASN1BitString extends ASN1String<boolean[]> {
 
-    private int unusedBits;
-    private boolean[] bits;
+    private final int unusedBits;
+    private final boolean[] bits;
 
     private ASN1BitString(ASN1Tag<ASN1BitString> tag, byte[] bytes, int unusedBits) {
         super(tag, bytes);
@@ -43,7 +45,7 @@ public class ASN1BitString extends ASN1String<boolean[]> {
 
     public ASN1BitString(boolean[] bits) {
         super(ASN1Tag.BIT_STRING, constructBytes(bits));
-        this.bits = bits;
+        this.bits = Arrays.copyOf(bits, bits.length);
         // 0-7 unused bits in the last octet (X.690 8.6.2.2)
         this.unusedBits = (8 - bits.length % 8) % 8;
     }
@@ -135,26 +137,42 @@ public class ASN1BitString extends ASN1String<boolean[]> {
                     while (stream.available() > 0) {
                         ASN1Tag subTag = stream.readTag();
                         // Segments are always UNIVERSAL BIT STRINGs (X.690 8.6.4), also when the outer tag is implicit.
-                        Checks.checkState(subTag.getAsn1TagClass() == ASN1TagClass.UNIVERSAL && subTag.getTag() == ASN1Tag.BIT_STRING.getTag() && !subTag.isConstructed(),
+                        checkFormat(subTag.getAsn1TagClass() == ASN1TagClass.UNIVERSAL && subTag.getTag() == ASN1Tag.BIT_STRING.getTag() && !subTag.isConstructed(),
                             "Expected a primitive ASN.1 BIT STRING segment in Constructed object, got: %s", subTag);
                         int i = stream.readLength();
                         byte[] subValue = stream.readValue(i);
+                        boolean last = stream.available() <= 0;
+                        // Only the last segment may have unused bits (X.690 8.6.4)
+                        int segmentUnusedBits = checkInitialOctet(subValue, !last);
                         baos.write(subValue, 1, subValue.length - 1);
-                        if (stream.available() <= 0) {
-                            // Last ASN.1 BitString
-                            unusedBits = subValue[0];
+                        if (last) {
+                            unusedBits = segmentUnusedBits;
                         }
                     }
                     // Normalise to the primitive form, which is how the joined contents will be serialized (X.690 10.2).
                     return new ASN1BitString(asn1Tag.primitive(), baos.toByteArray(), unusedBits);
-                } catch (IOException | IllegalStateException e) {
+                } catch (IOException e) {
                     throw new ASN1ParseException(e, "Unable to parse Constructed ASN.1 BIT STRING");
                 }
             } else {
-                byte unusedBits = value[0];
+                int unusedBits = checkInitialOctet(value, false);
                 byte[] bits = Arrays.copyOfRange(value, 1, value.length);
                 return new ASN1BitString(asn1Tag, bits, unusedBits);
             }
+        }
+
+        /**
+         * The contents start with an initial octet holding the number of unused bits in the last octet, 0-7, which
+         * must be 0 if there are no further octets (X.690 8.6.2).
+         *
+         * @return the number of unused bits
+         */
+        private static int checkInitialOctet(byte[] contents, boolean mustBeZero) {
+            checkFormat(contents.length > 0, "ASN.1 BIT STRING is missing the initial octet with the number of unused bits");
+            int unusedBits = contents[0] & 0xff;
+            checkFormat(unusedBits <= 7, "ASN.1 BIT STRING has %s unused bits, at most 7 are allowed", unusedBits);
+            checkFormat(unusedBits == 0 || (contents.length > 1 && !mustBeZero), "ASN.1 BIT STRING has %s unused bits where none are allowed", unusedBits);
+            return unusedBits;
         }
     }
 

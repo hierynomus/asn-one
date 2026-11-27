@@ -19,7 +19,7 @@ public enum ASN1Encoding {
     PRIMITIVE(0x0),
     CONSTRUCTED(0x20);
 
-    private int value;
+    private final int value;
 
     ASN1Encoding(int value) {
         this.value = value;

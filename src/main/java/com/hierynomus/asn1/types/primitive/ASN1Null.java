@@ -22,7 +22,8 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
-import com.hierynomus.asn1.util.Checks;
+
+import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 public class ASN1Null extends ASN1PrimitiveValue<Void> {
 
@@ -49,7 +50,8 @@ public class ASN1Null extends ASN1PrimitiveValue<Void> {
 
         @Override
         public ASN1Null parse(ASN1Tag<ASN1Null> asn1Tag, byte[] value) {
-            Checks.checkState(value.length == 0, "ASN.1 NULL can not have a value");
+            // X.690 8.8.2: no content octets
+            checkFormat(value.length == 0, "ASN.1 NULL must not have content octets, but has %s", value.length);
             return new ASN1Null();
         }
     }

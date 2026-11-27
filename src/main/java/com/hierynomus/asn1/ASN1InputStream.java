@@ -28,9 +28,26 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1Object> {
     private static final Logger logger = LoggerFactory.getLogger(ASN1InputStream.class);
     private final ASN1Decoder decoder;
+
+    /**
+     * Maximum nesting depth of constructed objects (SEQUENCE, SET, tagged objects, ...) that is parsed. Parsing is
+     * recursive, so without a limit a few kilobytes of deeply nested input could exhaust the stack. Real-world
+     * structures such as X.509 certificates or CMS messages stay well below this.
+     */
+    public static final int MAX_NESTING_DEPTH = 64;
+
+    // Parsing of nested objects recurses through new ASN1InputStream instances, so the depth is tracked per thread.
+    private static final ThreadLocal<int[]> NESTING_DEPTH = new ThreadLocal<int[]>() {
+        @Override
+        protected int[] initialValue() {
+            return new int[1];
+        }
+    };
 
     public ASN1InputStream(ASN1Decoder decoder, InputStream wrapped) {
         super(wrapped);
@@ -43,6 +60,9 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
     }
 
     public <T extends ASN1Object> T readObject() {
+        int[] depth = NESTING_DEPTH.get();
+        checkFormat(depth[0] < MAX_NESTING_DEPTH, "ASN.1 structure is nested deeper than %s levels", MAX_NESTING_DEPTH);
+        depth[0]++;
         try {
             ASN1Tag tag = decoder.readTag(this);
             logger.trace("Read ASN.1 tag {}", tag);
@@ -58,6 +78,10 @@ public class ASN1InputStream extends FilterInputStream implements Iterable<ASN1O
             throw pe;
         } catch (Exception e) {
             throw new ASN1ParseException(e, "Cannot parse ASN.1 object from stream");
+        } finally {
+            if (--depth[0] == 0) {
+                NESTING_DEPTH.remove();
+            }
         }
     }
 

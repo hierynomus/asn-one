@@ -18,6 +18,7 @@ package com.hierynomus.asn1.types.primitive;
 import com.hierynomus.asn1.ASN1InputStream;
 import com.hierynomus.asn1.ASN1OutputStream;
 import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
+import com.hierynomus.asn1.ASN1ParseException;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import static com.hierynomus.asn1.Bytes.bytes;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ASN1NullTest {
 
@@ -41,5 +43,12 @@ class ASN1NullTest {
         new ASN1OutputStream(null, stream).writeObject(new ASN1Null());
 
         assertArrayEquals(bytes(0x05, 0x00), stream.toByteArray());
+    }
+
+    @Test
+    void shouldRejectNullWithContents() {
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, () -> new ASN1InputStream(new BERDecoder(), bytes(0x05, 0x01, 0x00)).readObject());
+
+        assertEquals("ASN.1 NULL must not have content octets, but has 1", ex.getMessage());
     }
 }

@@ -25,6 +25,8 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
     private final BigInteger value;
 
@@ -33,8 +35,7 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
     }
 
     public ASN1Enumerated(BigInteger value) {
-        super(ASN1Tag.ENUMERATED);
-        this.value = value;
+        this(value, value.toByteArray());
     }
 
     private ASN1Enumerated(BigInteger value, byte[] valueBytes) {
@@ -54,6 +55,8 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public ASN1Enumerated parse(ASN1Tag<ASN1Enumerated> asn1Tag, byte[] value) throws ASN1ParseException {
+            // X.690 8.4, 8.3.1: the contents consist of one or more octets
+            checkFormat(value.length > 0, "ASN.1 ENUMERATED must have at least one content octet");
             BigInteger enumValue = new BigInteger(value);
             return new ASN1Enumerated(enumValue, value);
         }
@@ -66,22 +69,12 @@ public class ASN1Enumerated extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public int serializedLength(final ASN1Enumerated asn1Object) {
-            if (asn1Object.valueBytes == null) {
-                calculateBytes(asn1Object);
-            }
             return asn1Object.valueBytes.length;
         }
 
         @Override
         public void serialize(final ASN1Enumerated asn1Object, final ASN1OutputStream stream) throws IOException {
-            if (asn1Object.valueBytes == null) {
-                calculateBytes(asn1Object);
-            }
             stream.write(asn1Object.valueBytes);
-        }
-
-        private void calculateBytes(final ASN1Enumerated asn1Object) {
-            asn1Object.valueBytes = asn1Object.value.toByteArray();
         }
     }
 

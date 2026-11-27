@@ -22,11 +22,12 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
-import com.hierynomus.asn1.util.Checks;
+
+import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
 
-    private boolean value;
+    private final boolean value;
 
     public ASN1Boolean(boolean value) {
         super(ASN1Tag.BOOLEAN);
@@ -55,7 +56,8 @@ public class ASN1Boolean extends ASN1PrimitiveValue<Boolean> {
 
         @Override
         public ASN1Boolean parse(ASN1Tag<ASN1Boolean> asn1Tag, byte[] value) {
-            Checks.checkState(value.length == 1, "Value of ASN1Boolean should have length 1, but was %s", value.length);
+            // X.690 8.2.1: a single content octet
+            checkFormat(value.length == 1, "ASN.1 BOOLEAN must have exactly one content octet, but has %s", value.length);
             return new ASN1Boolean(value, value[0] != 0x0);
         }
     }

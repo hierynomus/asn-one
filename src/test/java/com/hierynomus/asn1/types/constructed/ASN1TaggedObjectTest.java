@@ -22,6 +22,7 @@ import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import com.hierynomus.asn1.encodingrules.der.DEREncoder;
 import com.hierynomus.asn1.types.ASN1Object;
 import com.hierynomus.asn1.types.ASN1Tag;
+import com.hierynomus.asn1.types.primitive.ASN1Integer;
 import com.hierynomus.asn1.types.primitive.ASN1ObjectIdentifier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,6 +31,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.stream.Stream;
 
 import static com.hierynomus.asn1.Bytes.bytes;
@@ -39,6 +41,9 @@ import static com.hierynomus.asn1.types.ASN1TagClass.APPLICATION;
 import static com.hierynomus.asn1.types.ASN1TagClass.CONTEXT_SPECIFIC;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -99,5 +104,94 @@ class ASN1TaggedObjectTest {
         new ASN1OutputStream(new DEREncoder(), baos).writeObject(value);
 
         assertArrayEquals(expected, baos.toByteArray());
+    }
+
+    private static ASN1TaggedObject read(byte[] encoded) {
+        return new ASN1InputStream(new BERDecoder(), encoded).readObject();
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("implicitTaggedObjects")
+    void primitiveParsedTaggedObjectShouldBeImplicit(byte[] encoded, ASN1Tag<?> tag) {
+        assertFalse(read(encoded).isExplicit());
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("explicitTaggedObjects")
+    void constructedParsedTaggedObjectMayBeExplicit(byte[] encoded, ASN1Tag<?> tag) {
+        assertTrue(read(encoded).isExplicit());
+    }
+
+    @Test
+    void shouldNotReadPrimitiveTaggedObjectAsExplicit() {
+        // [1] IMPLICIT OCTET STRING whose contents happen to be a valid encoding (02 01 05, INTEGER 5): X.690 8.14.2
+        // requires an explicit tag to be constructed, so this must not be decoded as an explicitly tagged INTEGER.
+        ASN1TaggedObject taggedObject = read(bytes(0x81, 0x03, 0x02, 0x01, 0x05));
+
+        assertThrows(ASN1ParseException.class, taggedObject::getObject);
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("implicitTaggedObjects")
+    void parsedImplicitTaggedObjectsShouldBeComparable(byte[] encoded, ASN1Tag<?> tag) {
+        assertEquals(read(encoded), read(encoded));
+        assertEquals(read(encoded).hashCode(), read(encoded).hashCode());
+    }
+
+    @Test
+    void parsedTaggedObjectsWithDifferentContentsShouldNotBeEqual() {
+        assertNotEquals(read(bytes(0x81, 0x01, 0x05)), read(bytes(0x81, 0x01, 0x06)));
+        assertNotEquals(read(bytes(0x81, 0x01, 0x05)), read(bytes(0x82, 0x01, 0x05)));
+    }
+
+    static Stream<Arguments> parsedAndConstructed() {
+        return Stream.of(
+            arguments(bytes(0x81, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02), new ASN1TaggedObject(contextSpecific(0x01).primitive(), SPNEGO_OID, false)),
+            arguments(bytes(0xa1, 0x08, 0x06, 0x06, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x02), new ASN1TaggedObject(contextSpecific(0x01).constructed(), SPNEGO_OID)),
+            arguments(bytes(0xa1, 0x03, 0x02, 0x01, 0x05), new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Sequence(Collections.<ASN1Object>singletonList(new ASN1Integer(5))), false)));
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("parsedAndConstructed")
+    void parsedTaggedObjectShouldEqualConstructedOne(byte[] encoded, ASN1TaggedObject constructed) {
+        ASN1TaggedObject parsed = read(encoded);
+
+        assertEquals(constructed, parsed);
+        assertEquals(parsed, constructed);
+        assertEquals(constructed.hashCode(), parsed.hashCode());
+    }
+
+    @Test
+    void parsedTaggedObjectShouldNotEqualConstructedOneThatDoesNotMatch() {
+        ASN1TaggedObject parsed = read(bytes(0xa1, 0x03, 0x02, 0x01, 0x05));
+
+        assertNotEquals(new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Integer(6)), parsed);
+        // The contents are not an OBJECT IDENTIFIER, so decoding fails: not equal rather than an exception
+        assertNotEquals(new ASN1TaggedObject(contextSpecific(0x01).constructed(), SPNEGO_OID), parsed);
+    }
+
+    @Test
+    void taggedObjectsWithTheSameEncodingShouldBeEqual() {
+        // [1] EXPLICIT INTEGER 5 and [1] IMPLICIT SEQUENCE { INTEGER 5 } both encode as a1 03 02 01 05
+        ASN1TaggedObject explicitInteger = new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Integer(5));
+        ASN1TaggedObject implicitSequence = new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Sequence(Collections.<ASN1Object>singletonList(new ASN1Integer(5))), false);
+        ASN1TaggedObject parsed = read(bytes(0xa1, 0x03, 0x02, 0x01, 0x05));
+
+        assertEquals(explicitInteger, implicitSequence);
+        assertEquals(explicitInteger, parsed);
+        assertEquals(implicitSequence, parsed);
+        assertEquals(explicitInteger.hashCode(), implicitSequence.hashCode());
+        assertEquals(explicitInteger.hashCode(), parsed.hashCode());
+    }
+
+    @Test
+    void shouldKeepAllDistinctTaggedObjectsInAHashSet() {
+        java.util.Set<ASN1TaggedObject> set = new java.util.HashSet<>();
+        for (int i = 0; i < 100; i++) {
+            set.add(new ASN1TaggedObject(contextSpecific(0x01).constructed(), new ASN1Integer(i)));
+            set.add(read(bytes(0xa1, 0x03, 0x02, 0x01, i)));
+        }
+
+        assertEquals(100, set.size());
     }
 }

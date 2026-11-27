@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class ASN1BitStringTest {
@@ -180,6 +181,42 @@ class ASN1BitStringTest {
         assertEquals(bitString.length(), read.length());
     }
 
+    static Stream<Arguments> malformedBitStrings() {
+        return Stream.of(
+            arguments("no initial octet (X.690 8.6.2)", bytes(0x03, 0x00)),
+            arguments("8 unused bits (X.690 8.6.2.2)", bytes(0x03, 0x02, 0x08, 0xff)),
+            arguments("255 unused bits", bytes(0x03, 0x02, 0xff, 0xff)),
+            arguments("unused bits without data (X.690 8.6.2.3)", bytes(0x03, 0x01, 0x03)),
+            arguments("constructed, segment without initial octet", bytes(0x23, 0x02, 0x03, 0x00)),
+            arguments("constructed, unused bits in a segment that is not the last (X.690 8.6.4)",
+                bytes(0x23, 0x08, 0x03, 0x02, 0x04, 0xf0, 0x03, 0x02, 0x00, 0xff)));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("malformedBitStrings")
+    void shouldRejectMalformedBitString(String description, byte[] encoded) {
+        ASN1InputStream is = new ASN1InputStream(new BERDecoder(), encoded);
+
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, is::readObject);
+
+        assertTrue(rootMessage(ex).contains("BIT STRING"), rootMessage(ex));
+    }
+
+    @Test
+    void shouldParseEmptyBitString() {
+        ASN1BitString bitString = new ASN1InputStream(new BERDecoder(), bytes(0x03, 0x01, 0x00)).readObject();
+
+        assertEquals(0, bitString.length());
+    }
+
+    private static String rootMessage(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        for (Throwable c = t; c != null; c = c.getCause()) {
+            sb.append(c.getMessage()).append(" / ");
+        }
+        return sb.toString();
+    }
+
     private static boolean[] toBooleans(int[] bits) {
         boolean[] result = new boolean[bits.length];
         for (int i = 0; i < bits.length; i++) {
@@ -194,5 +231,25 @@ class ASN1BitStringTest {
             bitSet.set(i, bits[i] == 1);
         }
         return bitSet;
+    }
+
+    @Test
+    void shouldNotBeAffectedByChangesToTheGivenBits() {
+        boolean[] bits = {true, false, true};
+        ASN1BitString bitString = new ASN1BitString(bits);
+
+        bits[1] = true;
+
+        assertArrayEquals(new boolean[]{true, false, true}, bitString.getValue());
+    }
+
+    @Test
+    void shouldNotBeAffectedByChangesToTheGivenBytes() {
+        byte[] value = bytes(0xa0);
+        ASN1BitString bitString = new ASN1BitString(value, 5);
+
+        value[0] = (byte) 0xe0;
+
+        assertArrayEquals(bytes(0xa0), bitString.getValueBytes());
     }
 }

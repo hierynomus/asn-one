@@ -24,8 +24,10 @@ import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
-    private BigInteger value;
+    private final BigInteger value;
 
     public ASN1Integer(long value) {
         this(BigInteger.valueOf(value));
@@ -59,6 +61,8 @@ public class ASN1Integer extends ASN1PrimitiveValue<BigInteger> {
 
         @Override
         public ASN1Integer parse(ASN1Tag<ASN1Integer> asn1Tag, byte[] value) {
+            // X.690 8.3.1: the contents consist of one or more octets
+            checkFormat(value.length > 0, "ASN.1 INTEGER must have at least one content octet");
             return new ASN1Integer(value, new BigInteger(value));
         }
     }

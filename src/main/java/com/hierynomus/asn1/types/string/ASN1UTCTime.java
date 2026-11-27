@@ -31,6 +31,8 @@ import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
 
+import static com.hierynomus.asn1.util.Checks.checkFormat;
+
 /**
  * ASN.1 UTCTime (UNIVERSAL 23, X.680 clause 47), defined as a VisibleString of the form {@code YYMMDDhhmm[ss]}
  * followed by either {@code Z} or a {@code +hhmm}/{@code -hhmm} offset from UTC.
@@ -85,9 +87,7 @@ public class ASN1UTCTime extends ASN1CharacterString {
 
     private static Date parse(String value) {
         Matcher m = UTC_TIME.matcher(value);
-        if (!m.matches()) {
-            throw new ASN1ParseException("Invalid ASN.1 UTCTime: '%s'", value);
-        }
+        checkFormat(m.matches(), "Invalid ASN.1 UTCTime: '%s'", value);
         int yy = Integer.parseInt(m.group(1));
         Calendar calendar = new GregorianCalendar(UTC);
         calendar.setLenient(false);
@@ -102,9 +102,7 @@ public class ASN1UTCTime extends ASN1CharacterString {
         if (m.group(8) != null) {
             int offsetHours = Integer.parseInt(m.group(9));
             int offsetMinutes = Integer.parseInt(m.group(10));
-            if (offsetHours > 23 || offsetMinutes > 59) {
-                throw new ASN1ParseException("Invalid offset in ASN.1 UTCTime: '%s'", value);
-            }
+            checkFormat(offsetHours <= 23 && offsetMinutes <= 59, "Invalid offset in ASN.1 UTCTime: '%s'", value);
             offsetMillis = (offsetHours * 60L + offsetMinutes) * 60_000L * ("-".equals(m.group(8)) ? -1 : 1);
         }
         try {

@@ -23,12 +23,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import com.hierynomus.asn1.ASN1OutputStream;
-import com.hierynomus.asn1.ASN1ParseException;
 import com.hierynomus.asn1.ASN1Parser;
 import com.hierynomus.asn1.ASN1Serializer;
 import com.hierynomus.asn1.encodingrules.ASN1Decoder;
 import com.hierynomus.asn1.encodingrules.ASN1Encoder;
 import com.hierynomus.asn1.types.ASN1Tag;
+
+import static com.hierynomus.asn1.util.Checks.checkFormat;
 
 /**
  * ASN.1 OBJECT IDENTIFIER (UNIVERSAL 6), in dotted notation, e.g. {@code 1.2.840.113549}.
@@ -51,8 +52,7 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
      * at least two arcs, the first being 0, 1 or 2, and the second being below 40 if the first is 0 or 1
      */
     public ASN1ObjectIdentifier(String oid) {
-        super(ASN1Tag.OBJECT_IDENTIFIER);
-        this.oid = checkValid(oid);
+        this(encode(checkValid(oid)), oid);
     }
 
     private ASN1ObjectIdentifier(byte[] valueBytes, String oid) {
@@ -86,6 +86,27 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
         return oid;
     }
 
+    private static byte[] encode(String oid) {
+        String[] arcs = oid.split("\\.");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        writeSubidentifier(baos, new BigInteger(arcs[0]).multiply(FORTY).add(new BigInteger(arcs[1])));
+        for (int i = 2; i < arcs.length; i++) {
+            writeSubidentifier(baos, new BigInteger(arcs[i]));
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Base 128, most significant group first, bit 8 set on all but the last octet (X.690 8.19.2).
+     */
+    private static void writeSubidentifier(ByteArrayOutputStream baos, BigInteger subidentifier) {
+        int groups = Math.max(1, (subidentifier.bitLength() + 6) / 7);
+        for (int i = groups - 1; i >= 0; i--) {
+            int group = subidentifier.shiftRight(i * 7).intValue() & 0x7f;
+            baos.write(i > 0 ? group | 0x80 : group);
+        }
+    }
+
     public static class Parser extends ASN1Parser<ASN1ObjectIdentifier> {
         public Parser(ASN1Decoder decoder) {
             super(decoder);
@@ -93,22 +114,16 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
 
         @Override
         public ASN1ObjectIdentifier parse(ASN1Tag<ASN1ObjectIdentifier> asn1Tag, byte[] value) {
-            if (value.length == 0) {
-                throw new ASN1ParseException("An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
-            }
+            checkFormat(value.length > 0, "An ASN.1 OBJECT IDENTIFIER should have at least a one byte value");
             List<BigInteger> subidentifiers = new ArrayList<>();
             int i = 0;
             while (i < value.length) {
-                if ((value[i] & 0xff) == 0x80) {
-                    // X.690 8.19.2: a subidentifier shall be encoded in the fewest possible octets
-                    throw new ASN1ParseException("Non-minimal subidentifier encoding in ASN.1 OBJECT IDENTIFIER at offset %s", i);
-                }
+                // X.690 8.19.2: a subidentifier shall be encoded in the fewest possible octets
+                checkFormat((value[i] & 0xff) != 0x80, "Non-minimal subidentifier encoding in ASN.1 OBJECT IDENTIFIER at offset %s", i);
                 BigInteger subidentifier = BigInteger.ZERO;
                 int b;
                 do {
-                    if (i >= value.length) {
-                        throw new ASN1ParseException("Truncated subidentifier in ASN.1 OBJECT IDENTIFIER");
-                    }
+                    checkFormat(i < value.length, "Truncated subidentifier in ASN.1 OBJECT IDENTIFIER");
                     b = value[i++] & 0xff;
                     subidentifier = subidentifier.shiftLeft(7).or(BigInteger.valueOf(b & 0x7f));
                 } while ((b & 0x80) != 0);
@@ -139,38 +154,11 @@ public class ASN1ObjectIdentifier extends ASN1PrimitiveValue<String> {
 
         @Override
         public int serializedLength(final ASN1ObjectIdentifier asn1Object) {
-            if (asn1Object.valueBytes == null) {
-                calculateBytes(asn1Object);
-            }
             return asn1Object.valueBytes.length;
-        }
-
-        private void calculateBytes(final ASN1ObjectIdentifier asn1Object) {
-            String[] arcs = asn1Object.oid.split("\\.");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            writeSubidentifier(baos, new BigInteger(arcs[0]).multiply(FORTY).add(new BigInteger(arcs[1])));
-            for (int i = 2; i < arcs.length; i++) {
-                writeSubidentifier(baos, new BigInteger(arcs[i]));
-            }
-            asn1Object.valueBytes = baos.toByteArray();
-        }
-
-        /**
-         * Base 128, most significant group first, bit 8 set on all but the last octet (X.690 8.19.2).
-         */
-        private static void writeSubidentifier(ByteArrayOutputStream baos, BigInteger subidentifier) {
-            int groups = Math.max(1, (subidentifier.bitLength() + 6) / 7);
-            for (int i = groups - 1; i >= 0; i--) {
-                int group = subidentifier.shiftRight(i * 7).intValue() & 0x7f;
-                baos.write(i > 0 ? group | 0x80 : group);
-            }
         }
 
         @Override
         public void serialize(final ASN1ObjectIdentifier asn1Object, final ASN1OutputStream stream) throws IOException {
-            if (asn1Object.valueBytes == null) {
-                calculateBytes(asn1Object);
-            }
             stream.write(asn1Object.valueBytes);
         }
     }

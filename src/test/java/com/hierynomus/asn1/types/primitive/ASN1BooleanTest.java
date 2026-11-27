@@ -21,6 +21,8 @@ import com.hierynomus.asn1.encodingrules.ber.BERDecoder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import com.hierynomus.asn1.ASN1ParseException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.util.stream.Stream;
 import static com.hierynomus.asn1.Bytes.bytes;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class ASN1BooleanTest {
@@ -60,5 +63,17 @@ class ASN1BooleanTest {
         new ASN1OutputStream(null, stream).writeObject(value);
 
         assertArrayEquals(expected, stream.toByteArray());
+    }
+
+    @ParameterizedTest(name = "{0} content octets")
+    @ValueSource(ints = {0, 2})
+    void shouldRejectBooleanWithWrongLength(int length) {
+        byte[] encoded = new byte[2 + length];
+        encoded[0] = 0x01;
+        encoded[1] = (byte) length;
+
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, () -> new ASN1InputStream(new BERDecoder(), encoded).readObject());
+
+        assertEquals("ASN.1 BOOLEAN must have exactly one content octet, but has " + length, ex.getMessage());
     }
 }

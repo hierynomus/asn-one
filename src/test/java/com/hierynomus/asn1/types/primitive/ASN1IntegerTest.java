@@ -85,4 +85,19 @@ class ASN1IntegerTest {
         String message = ex.getCause().getMessage();
         assertTrue(message.matches("The ASN.1 tag .* does not support encoding as CONSTRUCTED"), message);
     }
+
+    @Test
+    void shouldRejectIntegerWithoutContents() {
+        // X.690 8.3.1: at least one content octet
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, () -> new ASN1InputStream(new BERDecoder(), bytes(0x02, 0x00)).readObject());
+
+        assertEquals("ASN.1 INTEGER must have at least one content octet", ex.getMessage());
+    }
+
+    @Test
+    void shouldRejectEnumeratedWithoutContents() {
+        ASN1ParseException ex = assertThrows(ASN1ParseException.class, () -> new ASN1InputStream(new BERDecoder(), bytes(0x0a, 0x00)).readObject());
+
+        assertEquals("ASN.1 ENUMERATED must have at least one content octet", ex.getMessage());
+    }
 }
